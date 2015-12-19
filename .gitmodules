@@ -1,0 +1,3 @@
+[submodule "Adafruit_Python_BMP"]
+	path = Adafruit_Python_BMP
+	url = https://github.com/adafruit/Adafruit_Python_BMP.git
