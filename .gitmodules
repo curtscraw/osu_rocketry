@@ -1,3 +1,6 @@
 [submodule "Adafruit_Python_BMP"]
 	path = Adafruit_Python_BMP
 	url = https://github.com/adafruit/Adafruit_Python_BMP.git
+[submodule "Adafruit_LSM9DS0_Library"]
+	path = Adafruit_LSM9DS0_Library
+	url = https://github.com/adafruit/Adafruit_LSM9DS0_Library.git
