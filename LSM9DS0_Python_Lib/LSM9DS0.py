@@ -66,6 +66,19 @@ LSM9DS0_GYRO_245DPS                 = 0.00875
 LSM9DS0_GYRO_500DPS                 = 0.01750
 LSM9DS0_GYRO_2000DPS                = 0.07000
 
+#gyro data rate settings and cutoff bandwith
+#TODO add more variety
+LSM9DS0_GYRODR_95HZ                 = (0b00 << 6)
+LSM9DS0_GYRODR_190HZ                = (0b01 << 6)
+LSM9DS0_GYRODR_380HZ                = (0b10 << 6)
+LSM9DS0_GYRODR_760HZ                = (0b11 << 6)
+
+#bandwith selection bits                           DR:   90    190   380   760
+LSM9DS0_GYRO_CUTOFF_1               = (0b00 << 4)  #     12.5  12.5  20    30
+LSM9DS0_GYRO_CUTOFF_2               = (0b01 << 4)  #     25    25    25    25
+LSM9DS0_GYRO_CUTOFF_3               = (0b10 << 4)  #     25    50    50    50
+LSM9DS0_GYRO_CUTOFF_4               = (0b11 << 4)  #     25    70    100   100
+
 #configuration register values
 #accelerometer range setting
 LSM9DS0_ACCELRANGE_2G               = (0b000 << 3)
@@ -114,49 +127,84 @@ LSM9DS0_ACCEL_ID                    = 0b01001001
 #gyro specific code
 class LSM9DS0_GYRO:
    #setup the gyro TODO
-   def __init__(self, gyro_dr=GYRO_BASE_MODE_NORMAL_IDK, gyro_addr=LSM9DS0_GYRO_ADDR):
+   def __init__(self, gyro_dr=(LSM9DS0_GYRODR_95HZ | LSM9DS0_GYRO_CUTOFF_1), gyro_addr=LSM9DS0_GYRO_ADDR):
       """looks for the lsm9dso on i2c bus, and performs register configuration on it"""
       self._sensor = i2c.get_i2c_device(gyro_addr)
       
       #verify initialization by checking the who_am_i register
-      if not (self._sensor.readU8(LSM9DS0_WHO_AM_I_G) == TODO):
+      if not (self._sensor.readU8(LSM9DS0_WHO_AM_I_G) == LSM9DS0_GYRO_ID):
          #not the right device!
          print "Could not initialize the gyro!"
          #sys.exit()
 
-      self._capture_dr = gyro_dr
+      self._sensor.start_capture()
       self._config_gyro(gyro_dr)
   
-   def _config_gyro(self, mode):
+   def _config_gyro(self, scale, gyro_dr):
       """perform configuration based on the mode passed in"""
-      self._lsb_inc = mode
+      #data aquisition rate
+      temp_reg = self._sensor.readU8(LSM9DS0_REG_CTRL_REG1_G)
+      temp_reg &= 0x0F
+      temp_reg |= gyro_dr
+      self._sensor.wrtie8(LSM9DS0_REG_CTRL_REG1_G, temp_reg)
 
+      #set scale
+      temp_reg = self._sensor.readU8(LSM9DS0_REG_CTRL_REG4_G)
+      temp_reg &= 0xFC
+      temp_reg |= scale
+      self._sensor.write8(LSM9DS0_reg_CTRL_REG4_G, temp_reg)
+
+      #record the scale for computations
+      if (scale == LSM9DS0_GYROSCALE_245DPs) {
+         slef._gyro_dps = LSM9DS0_GYRO_DPS_DIGIT_245DPS
+      } else if (scale == LSM9DS0_GYROSCALE_500DPS) {
+         slef._gyro_dps = LSM9DS0_GYRO_DPS_DIGIT_500DPS
+      } else if (scale == LSM9DS0_GYROSCALE_2000DPS) {
+         slef._gyro_dps = LSM9DS0_GYRO_DPS_DIGIT_2000DPS
+      }
+      
    def start_capture(self)
       """start data logging on the sensor"""
-      self._config_gyro(self._capture_dr)
+      temp_reg = self._sensor.readU8(LSM9DS0_CTRL_REG_REG1_G)
+      temp_reg |= 0x0F           #enable all 3 axis, and put into normal mode
+      self._sensor.write8(LSM9DS0_CTRL_REG_REG1_G, temp_reg)
 
    def stop_capture(self)
       """stop data capture, puts it into low power mode"""
-      self._config_gyro(LSM9DS0_GYRO_OFF)
+      temp_reg = self._sensor.readU8(LSM9DS0_CTRL_REG_REG1_G)
+      temp_reg &= 0xF7           #put it into power down mode
+      self._sensor.write8(LSM9DS0_CTRL_REG_REG1_G, temp_reg)
    
    def _parse_raw(self, raw_gyro):
       """takes raw gyro 16 bit data in, parses it and normalizes per manual"""
-      return raw_gyro
+      return raw_gyro * self._gyro_dps
 
    def read_x(self):
       """read the x data, then parse it and return"""
-      x = 0
-      return self._parse_raw(x)
+      d_lo = self._sensor.readU8(LSM9DS0_REG_OUT_X_L_G)
+      d_hi = self._sensor.readU8(LSM9DS0_REG_OUT_X_H_G)
+
+      axis = (d_lo | d_hi << 8)
+
+      return self._parse_raw(axis)
    
    def read_y(self):
       """read the y data, parse, and return"""
-      y = 0
-      return self._parse_raw(y)
+      d_lo = self._sensor.readU8(LSM9DS0_REG_OUT_Y_L_G)
+      d_hi = self._sensor.readU8(LSM9DS0_REG_OUT_Y_H_G)
+
+      axis = (d_lo | d_hi << 8)
+
+      return self._parse_raw(axis)
    
    def read_z(self):
       """read the z data, parse, and then return"""
-      z = 0
-      return self._parse_raw(z)
+      d_lo = self._sensor.readU8(LSM9DS0_REG_OUT_Z_L_G)
+      d_hi = self._sensor.readU8(LSM9DS0_REG_OUT_Z_H_G)
+
+      axis = (d_lo | d_hi << 8)
+
+      return self._parse_raw(axis)
    
    def read_gyro(self):
       """return the x, y, and z gyro readings"""

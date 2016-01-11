@@ -7,6 +7,7 @@ import sys      #for exiting when there is no fix
 import Adafruit_BBIO.UART as UART #Adafruit BeagleBobe UART libraries
  
 UART.setup("UART1")    #initialize the SERIAL1 or UART1 interface pins
+#TODO: Setup gps on uart2 instead of uart1
 
 #this ensures that the gpsd service is running
 #the gpsd service provides the python gps module with input from the physical module
