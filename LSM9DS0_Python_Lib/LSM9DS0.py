@@ -309,11 +309,11 @@ class LSM9DS0_ACCEL:
    
    def _parse_accel(self, raw_accel):
       """takes raw accelrometer data, and interperates it"""
-	   if raw_accel >= 32768:
-		   raw_accel -= 65536
+      if raw_accel >= 32768:
+         raw_accel -= 65536
 
       #1000 is a constant to get to G's on earth
-	   parsed = (raw_accel * self._accel_lsb) / 1000
+      parsed = (raw_accel * self._accel_lsb) / 1000
    
       return parsed
    
@@ -328,46 +328,46 @@ class LSM9DS0_ACCEL:
 
    def accel_x(self):
       """read accelerometer x data"""
-	   xlo = self._sensor.readU8(LSM9DS0_REG_OUT_X_L_A)
-	   xhi = self._sensor.readU8(LSM9DS0_REG_OUT_X_H_A)
-	   x = (xlo | xhi << 8)
+      xlo = self._sensor.readU8(LSM9DS0_REG_OUT_X_L_A)
+      xhi = self._sensor.readU8(LSM9DS0_REG_OUT_X_H_A)
+      x = (xlo | xhi << 8)
       
       return self._parse_accel(x)
 
    def accel_y(self):
       """read accelerometer y data"""
-	   ylo = self._sensor.readU8(LSM9DS0_REG_OUT_Y_L_A)
-	   yhi = self._sensor.readU8(LSM9DS0_REG_OUT_Y_H_A)
-	   y = (ylo | yhi << 8)
+      ylo = self._sensor.readU8(LSM9DS0_REG_OUT_Y_L_A)
+      yhi = self._sensor.readU8(LSM9DS0_REG_OUT_Y_H_A)
+      y = (ylo | yhi << 8)
       return self._parse_accel(y)
 
    def accel_z(self):
       """read accelerometer z data"""
-	   zlo = self._sensor.readU8(LSM9DS0_REG_OUT_Z_L_A)
-	   zhi = self._sensor.readU8(LSM9DS0_REG_OUT_Z_H_A)
-	   z = (zlo | zhi << 8)
+      zlo = self._sensor.readU8(LSM9DS0_REG_OUT_Z_L_A)
+      zhi = self._sensor.readU8(LSM9DS0_REG_OUT_Z_H_A)
+      z = (zlo | zhi << 8)
       return self._parse_accel(z)
    
    def mag_x(self):
       """read magnetometer x data"""
-	   xlo = self._sensor.readU8(LSM9DS0_REG_OUT_X_L_M)
-	   xhi = self._sensor.readU8(LSM9DS0_REG_OUT_X_H_M)
-	   x = (xlo | xhi << 8)
+      xlo = self._sensor.readU8(LSM9DS0_REG_OUT_X_L_M)
+      xhi = self._sensor.readU8(LSM9DS0_REG_OUT_X_H_M)
+      x = (xlo | xhi << 8)
       
       return self._parse_mag(x)
 
    def mag_y(self):
       """read magnetometer y data"""
-	   ylo = self._sensor.readU8(LSM9DS0_REG_OUT_Y_L_M)
-	   yhi = self._sensor.readU8(LSM9DS0_REG_OUT_Y_H_M)
-	   y = (ylo | yhi << 8)
+      ylo = self._sensor.readU8(LSM9DS0_REG_OUT_Y_L_M)
+      yhi = self._sensor.readU8(LSM9DS0_REG_OUT_Y_H_M)
+      y = (ylo | yhi << 8)
       return self._parse_mag(y)
 
    def mag_z(self):
       """read magnetometer z data"""
-	   zlo = self._sensor.readU8(LSM9DS0_REG_OUT_Z_L_M)
-	   zhi = self._sensor.readU8(LSM9DS0_REG_OUT_Z_H_M)
-	   z = (zlo | zhi << 8)
+      zlo = self._sensor.readU8(LSM9DS0_REG_OUT_Z_L_M)
+      zhi = self._sensor.readU8(LSM9DS0_REG_OUT_Z_H_M)
+      z = (zlo | zhi << 8)
       return self._parse_mag(z)
 
    
