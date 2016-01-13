@@ -128,18 +128,18 @@ LSM9DS0_ACCEL_ID                    = 0b01001001
 #gyro specific code
 class LSM9DS0_GYRO:
    #setup the gyro TODO
-   def __init__(self, gyro_dr=(LSM9DS0_GYRODR_95HZ | LSM9DS0_GYRO_CUTOFF_1), gyro_addr=LSM9DS0_GYRO_ADDR):
+   def __init__(self, gyro_dr=(LSM9DS0_GYRODR_95HZ | LSM9DS0_GYRO_CUTOFF_1), gyro_scale=LSM9DS0_GYROSCALE_245DPS, gyro_addr=LSM9DS0_GYRO_ADDR):
       """looks for the lsm9dso on i2c bus, and performs register configuration on it"""
       self._sensor = i2c.get_i2c_device(gyro_addr)
       
       #verify initialization by checking the who_am_i register
-      if not (self._sensor.readU8(LSM9DS0_WHO_AM_I_G) == LSM9DS0_GYRO_ID):
+      if not (self._sensor.readU8(LSM9DS0_REG_WHO_AM_I_G) == LSM9DS0_GYRO_ID):
          #not the right device!
          print "Could not initialize the gyro!"
          #sys.exit()
 
-      self._sensor.start_capture()
-      self._config_gyro(gyro_dr)
+      self.start_capture()
+      self._config_gyro(gyro_scale, gyro_dr)
   
    def _config_gyro(self, scale, gyro_dr):
       """perform configuration based on the mode passed in"""
@@ -147,37 +147,41 @@ class LSM9DS0_GYRO:
       temp_reg = self._sensor.readU8(LSM9DS0_REG_CTRL_REG1_G)
       temp_reg &= 0x0F
       temp_reg |= gyro_dr
-      self._sensor.wrtie8(LSM9DS0_REG_CTRL_REG1_G, temp_reg)
+      self._sensor.write8(LSM9DS0_REG_CTRL_REG1_G, temp_reg)
 
       #set scale
       temp_reg = self._sensor.readU8(LSM9DS0_REG_CTRL_REG4_G)
       temp_reg &= 0xFC
       temp_reg |= scale
-      self._sensor.write8(LSM9DS0_reg_CTRL_REG4_G, temp_reg)
+      self._sensor.write8(LSM9DS0_REG_CTRL_REG4_G, temp_reg)
 
       #record the scale for computations
-      if (scale == LSM9DS0_GYROSCALE_245DPs) {
-         slef._gyro_dps = LSM9DS0_GYRO_DPS_DIGIT_245DPS
-      } else if (scale == LSM9DS0_GYROSCALE_500DPS) {
-         slef._gyro_dps = LSM9DS0_GYRO_DPS_DIGIT_500DPS
-      } else if (scale == LSM9DS0_GYROSCALE_2000DPS) {
-         slef._gyro_dps = LSM9DS0_GYRO_DPS_DIGIT_2000DPS
-      }
+      if (scale == LSM9DS0_GYROSCALE_245DPS):
+         self._gyro_dps = LSM9DS0_GYRO_245DPS
+      elif (scale == LSM9DS0_GYROSCALE_500DPS):
+         self._gyro_dps = LSM9DS0_GYRO_500DPS
+      elif (scale == LSM9DS0_GYROSCALE_2000DPS):
+         self._gyro_dps = LSM9DS0_GYRO_2000DPS
       
-   def start_capture(self)
+      
+   def start_capture(self):
       """start data logging on the sensor"""
-      temp_reg = self._sensor.readU8(LSM9DS0_CTRL_REG_REG1_G)
+      temp_reg = self._sensor.readU8(LSM9DS0_REG_CTRL_REG1_G)
       temp_reg |= 0x0F           #enable all 3 axis, and put into normal mode
-      self._sensor.write8(LSM9DS0_CTRL_REG_REG1_G, temp_reg)
+      self._sensor.write8(LSM9DS0_REG_CTRL_REG1_G, temp_reg)
 
-   def stop_capture(self)
+   def stop_capture(self):
       """stop data capture, puts it into low power mode"""
-      temp_reg = self._sensor.readU8(LSM9DS0_CTRL_REG_REG1_G)
+      temp_reg = self._sensor.readU8(LSM9DS0_REG_CTRL_REG1_G)
       temp_reg &= 0xF7           #put it into power down mode
-      self._sensor.write8(LSM9DS0_CTRL_REG_REG1_G, temp_reg)
+      self._sensor.write8(LSM9DS0_REG_CTRL_REG1_G, temp_reg)
    
    def _parse_raw(self, raw_gyro):
       """takes raw gyro 16 bit data in, parses it and normalizes per manual"""
+      #normalize the gyro range
+      if (raw_gyro >= 32768):
+         raw_gyro -= 65536
+
       return raw_gyro * self._gyro_dps
 
    def read_x(self):
@@ -207,7 +211,7 @@ class LSM9DS0_GYRO:
 
       return self._parse_raw(axis)
    
-   def read_gyro(self):
+   def read(self):
       """return the x, y, and z gyro readings"""
       x = self.read_x()
       y = self.read_y()
@@ -220,10 +224,10 @@ class LSM9DS0_ACCEL:
    #setup the accel based on mode for precision, rate, etc
    def __init__(self, accel_dr=LSM9DS0_ACCELDR_50HZ, mag_dr=LSM9DS0_MAGDR_50HZ, accel_range=LSM9DS0_ACCELRANGE_16G, mag_gain=LSM9DS0_MAGGAIN_2GAUSS, addr=LSM9DS0_ACCEL_ADDR):
       """setup for the accelerometer portion of the lsm9ds0"""
-      self._sensor = i2c.get_i2c_device(accel_addr)
+      self._sensor = i2c.get_i2c_device(addr)
       
       #verify initialization by checking the who_am_i register
-      if not (self._sensor.readU8(LSM9DS0_WHO_AM_I_XM) == 0x49):
+      if not (self._sensor.readU8(LSM9DS0_REG_WHO_AM_I_XM) == 0x49):
          #not the right device!
          print "Could not initialize the accelerometer!"
          #sys.exit()
@@ -251,13 +255,13 @@ class LSM9DS0_ACCEL:
    
       if (g_range == LSM9DS0_ACCELRANGE_16G):
          self._accel_lsb = LSM9DS0_ACCEL_LSB_16G
-      else if (g_range == LSM9DS0_ACCELRANGE_8G):
+      elif (g_range == LSM9DS0_ACCELRANGE_8G):
          self._accel_lsb = LSM9DS0_ACCEL_LSB_8G
-      else if (g_range == LSM9DS0_ACCELRANGE_6G):
+      elif (g_range == LSM9DS0_ACCELRANGE_6G):
          self._accel_lsb = LSM9DS0_ACCEL_LSB_6G
-      else if (g_range == LSM9DS0_ACCELRANGE_4G):
+      elif (g_range == LSM9DS0_ACCELRANGE_4G):
          self._accel_lsb = LSM9DS0_ACCEL_LSB_4G
-      else if (g_range == LSM9DS0_ACCELRANGE_2G):
+      elif (g_range == LSM9DS0_ACCELRANGE_2G):
          self._accel_lsb = LSM9DS0_ACCEL_LSB_2G
       else:
          self._accel_lsb = 0
@@ -275,11 +279,11 @@ class LSM9DS0_ACCEL:
       
       if (gain == LSM9DS0_MAGGAIN_2GAUSS):
          self._mag_lsb = LSM9DS0_MAG_MGAUSS_2
-      else if (gain == LSM9DS0_MAGGAIN_4GAUSS):
+      elif (gain == LSM9DS0_MAGGAIN_4GAUSS):
          self._mag_lsb = LSM9DS0_MAG_MGAUSS_4
-      else if (gain == LSM9DS0_MAGGAIN_8GAUSS):
+      elif (gain == LSM9DS0_MAGGAIN_8GAUSS):
          self._mag_lsb = LSM9DS0_MAG_MGAUSS_8
-      else if (gain == LSM9DS0_MAGGAIN_12GAUSS):
+      elif (gain == LSM9DS0_MAGGAIN_12GAUSS):
          self._mag_lsb = LSM9DS0_MAG_MGAUSS_12
       else:
          self._mag_lsb = 0
