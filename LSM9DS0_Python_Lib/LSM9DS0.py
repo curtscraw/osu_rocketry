@@ -1,4 +1,5 @@
 #Python I2C class for the ST LSM9DS0 Accel/Gyro/Mag/Temp sensor
+#based on Adafruit C++ class for the LSM9DS0: https://github.com/adafruit/Adafruit_LSM9DS0_Library
 
 #Dependencies of these classes
 import Adafruit_GPIO.I2C as i2c
