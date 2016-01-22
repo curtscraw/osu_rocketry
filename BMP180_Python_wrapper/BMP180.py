@@ -4,7 +4,7 @@ class BMP180:
    """Wrapper for Adafruit BMP085 class to use our altitude functions
    Does direct pass through for all other functions"""
 
-   def __init__(self, alt_init, mode=BMP085_STANDARD, address=BMP085_I2CADDR, i2c=None, **kwargs):
+   def __init__(self, alt_init, mode=BMP085.BMP085_STANDARD, address=BMP085.BMP085_I2CADDR, i2c=None, **kwargs):
       self._sensor = BMP085.BMP085(mode, address, i2c, kwargs)
       self._base_alt = alt_init
       self._p0 = self._sensor.read_sealevel_pressure(self._base_alt)
