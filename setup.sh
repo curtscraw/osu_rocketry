@@ -33,14 +33,14 @@ cd $WORKING_DIR
 #TODO create the install script for LSM9DS0 and BMP180 wrappers
 
 #install the Accelerometer module
-#cd LSM9DS0_Python_lib
-#python setup.py install
-#cd $WORKING_DIR
+cd LSM9DS0_Python_lib
+python setup.py install
+cd $WORKING_DIR
 
 #setup the gpsd to listen to the correct USART port
 cd python
-#gpsd -n /dev/ttyO0 -F /var/run/gpsd.sock
 python initial_uart_setup.py
+#gpsd -n /dev/ttyO0 -F /var/run/gpsd.sock
 gpsd -n /dev/ttyO1 -F /var/run/gpsd.sock
 #gpsd -n /dev/ttyO2 -F /var/run/gpsd.sock
 #gpsd -n /dev/ttyO3 -F /var/run/gpsd.sock
