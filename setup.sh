@@ -22,6 +22,7 @@ pip install pyserial
 pip install Adafruit_BBIO
 
 #instantiate the needed git submodules
+git submodule init
 git pull --recurse-submodules
 git submodule update --recursive
 
