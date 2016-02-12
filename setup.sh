@@ -14,7 +14,7 @@ fi
 
 #setup the required Debian packages
 apt-get update
-apt-get upgrade
+apt-get upgrade -y
 apt-get install -y git gpsd gpsd-clients python-gps python python-dev python-setuptools build-essential python-smbus
 
 #install pip modules
