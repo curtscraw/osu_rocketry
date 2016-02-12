@@ -1,6 +1,7 @@
 import Adafruit_BBIO.GPIO as GPIO
 import Adafruit_BBIO.UART as UART
 import BMP180
+import datetime
 
 from time import sleep
 from system import exit
@@ -9,8 +10,8 @@ from system import exit
 CUTTER_PIN = "P9_12"
 TRX_DEVICE = "/dev/ttyO1"
 POWER_ON_ALT = 70   #altitude in meters of power on
-CHUTE_DEPLOY = 160  #altitude to deploy main chute at
-MIN_ALT	     = 300  #target minimum altitude before coming back down
+CHUTE_DEPLOY = 300  #altitude to deploy main chute at
+MIN_ALT	     = 800  #target minimum altitude before coming back down
 
 #setup the gps and transmitter uart ports
 UART.setup("UART1")
@@ -32,10 +33,10 @@ f_log.write("starting a full test")
 start_cut = 0
 arm_cutter = 0
 
-while not start_cut:
+while True:
   elev_agl = alt.read_agl()
   val = (elev_agl, arm_cutter, start_cut)
-  s = str(val)
+  s = str(datetime.datetime.utcnow) + "alt: " + str(val)
   f_log.write(s)
   if elev_agl > min_alt:
     arm_cutter = 1
@@ -45,12 +46,7 @@ while not start_cut:
       f_log.write("cutter going to fire")
       GPIO.output(CUTTER_PIN, GPIO.HIGH)
       f_log.write("output pin is high, waiting 2 second")
-      sleep(2)
-
-
-#make it keep printing data!!!!!!!!
-
-GPIO.cleanup()
-f_log.close()
+      sleep(1) 
+      GPIO.output(CUTTER_PIN, GPIO.LOW)
 
 exit()
