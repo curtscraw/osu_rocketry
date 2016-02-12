@@ -32,7 +32,7 @@ python setup.py install
 cd $WORKING_DIR
 
 #install the Accelerometer module
-cd LSM9DS0_Python_lib
+cd LSM9DS0_Python_Lib
 python setup.py install
 cd $WORKING_DIR
 
