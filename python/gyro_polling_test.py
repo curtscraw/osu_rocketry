@@ -3,7 +3,7 @@ from time import sleep
 from datetime.datetime import utcnow
 import sys
 
-gyro = LSM9DS0.LSM9DS0_GYRO(LSM9DS0_GYRO_95HZ | LSM9DS0_GYRO_CUTOFF_1, LSM9DS0_GYRO_SCALE_2000DPS)
+gyro = LSM9DS0.LSM9DS0_GYRO(LSM9DS0_GYRODR_95HZ | LSM9DS0_GYRO_CUTOFF_1, LSM9DS0_GYROSCALE_2000DPS)
 
 while True:
   try:
