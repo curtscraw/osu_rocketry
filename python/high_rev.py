@@ -9,13 +9,13 @@ t_end = time.time() + 60 * 3	#run for 3 minutes
 
 f_log = open('/home/osu_rocketry/python/high_rev.out', 'a')
 
-f_log.write("starting high revolution test")
+#f_log.write("starting high revolution test")
 
-while time.time() < t_end:
+while True:
   try:
     (x, y, z) = gyro.read()
     t = utcnow()
     data = ' ' + t + "x: " + x + " y: " + y + " z: " + z
-    f_log.write(data)
-
+    #f_log.write(data)
+    print data
 f_log.close()
