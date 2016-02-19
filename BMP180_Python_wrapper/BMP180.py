@@ -5,7 +5,7 @@ class BMP180:
    Does direct pass through for all other functions"""
 
    def __init__(self, alt_init):
-      self._sensor = BMP085.BMP085(mode)
+      self._sensor = BMP085.BMP085()
       self._base_alt = alt_init
       self._p0 = self._sensor.read_sealevel_pressure(self._base_alt)
 
