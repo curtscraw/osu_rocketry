@@ -14,7 +14,6 @@ from thread import start_new_thread, allocate_lock
 
 import logging
 
-
 #general needed values
 CUTTER_PIN = "P9_12"
 TRX_DEVICE = "/dev/ttyO1"
@@ -23,6 +22,9 @@ CHUTE_DEPLOY = 330  #altitude to deploy main chute at
 MIN_ALT	     = 800  #target minimum altitude before coming back down
 ERROR_LOG = '/home/osu_rocketry/payload_error.log'
 DATA_LOG = '/home/osu_rocketry/payload_data.log'
+
+DEST_LAT = 0
+DEST_LONG = 0
 
 logging.basicConfig(filename=ERROR_LOG,level=logging.DEBUG,)
 
@@ -50,12 +52,16 @@ def xbee_th():
 
   while True:
     xbee.write(str(dict) + "\n\r")
+
+    #if errors were noted, clear them after printing
     if dict['xbee_errors']:
       err_lock.acquire()
       xbee.write(error_trace + "\n\r")
       dict['xbee_errors'] = 0
+      error_trace = ''
       err_lock.release()
 
+    #tx 2 time per second
     sleep(.5)
 
   xbee.write("xbee transmission ending, not good!\n")
@@ -79,14 +85,14 @@ def gps_th():
   while True:
     gps_report = session.next()
     if (session.fix.mode != 1):
-      print "GPS fix time: ", session.fix.time
-      print "  position: ", session.fix.latitude, ' ', session.fix.longitude
-      print "  altitude: ", session.fix.altitude
-      print "  tracked satelites: ", len(session.satellites)
-      print "  "
-      no_fix_count = 120		#reset fix miss count
+      if (not dict['gps_fix'] == 1):
+	dict['gps_fix'] = 1
+
+      dict['lat'] = session.fix.latitude
+      dict['long'] = session.fix.longitude
+      dict['gps_time']  = session.fix.utc
     else:
-      if not (dict['gps_fix'] == 0)
+      if (not dict['gps_fix'] == 0):
 	dict['gps_fix'] = 0
     
     sleep(1)
@@ -98,7 +104,17 @@ def nav_th():
   GPIO.output(CUTTER_PIN, GPIO.LOW)
 
   #wait, and then start navigating the thing!
-  pass
+  sleep(2)
+
+  #navigate based on dict: gps_fix, lat, long
+  #navigate based on report: gps_report 
+  while True:
+    while (dict['gps_fix'] == 0):
+      #do gps fix, so do something simple
+      #want to stop as soon as the gps has a fix though
+      pass
+    #navigate based on destination gps
+    pass
 
 def log_th():
   #open a log file
@@ -107,7 +123,10 @@ def log_th():
 
   while True:
     f_log.write(str(dict) + "\n\r")
-    f_log.write(str(gps_report) + "\n\r")
+    
+    if (dict['gps_fix'] == 1):
+      f_log.write(str(gps_report) + "\n\r")
+
     #sleep(.05)
 
 def poll_th():
@@ -131,11 +150,11 @@ def poll_th():
       dict['temp'] = alt.read_temperature()
       
       #act on altimeter, in case accel fails in some way
-      if (dict['agl'] > MIN_ALT) and (last_measure > MIN_ALT) and not (dict['arm_cut']):
+      if (dict['agl'] > MIN_ALT) and (last_measure > MIN_ALT) and (not dict['arm_cut']):
         dict['arm_cut'] = 1
         f_log.write("armed cutter\n\r")
   
-      if dict['arm_cut'] and not dict['start_cut']:
+      if dict['arm_cut'] and (not dict['start_cut']):
         if dict['agl'] <= CHUTE_DEPLOY and last_measure <= CHUTE_DEPLOY:
           dict['start_cut'] = 1
 	  start_new_thread(nav_th, ())
