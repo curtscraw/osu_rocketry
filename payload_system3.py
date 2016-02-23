@@ -3,6 +3,7 @@ import Adafruit_BBIO.UART as UART
 import gps
 import BMP180
 import LSM9DS0
+import TGY6114MD
 import datetime
 import serial
 
@@ -16,6 +17,8 @@ import logging
 
 #general needed values
 CUTTER_PIN = "P9_12"
+SERVO_PIN_L = "P8_13"
+SERVO_PIN_R = "P8_19"
 TRX_DEVICE = "/dev/ttyO1"
 POWER_ON_ALT = 79   #altitude in meters of power on
 CHUTE_DEPLOY = 330  #altitude to deploy main chute at
@@ -108,6 +111,10 @@ def nav_th():
   GPIO.output(CUTTER_PIN, GPIO.HIGH)
   sleep(1) 
   GPIO.output(CUTTER_PIN, GPIO.LOW)
+
+  #initialize servos
+  servo_r = TGY6114MD.TGY6114MD_SERVO(SERVO_PIN_R)
+  servo_l = TGY6114MD.TGY6114MD_SERVO(SERVO_PIN_L)
 
   #wait, and then start navigating the thing!
   sleep(2)

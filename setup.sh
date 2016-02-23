@@ -41,6 +41,11 @@ cd BMP180_Python_wrapper
 python setup.py install
 cd $WORKING_DIR
 
+#install TGY-6114MD servo wrapper
+cd TGY6114MD_Python_Lib
+python setup.py install
+cd $WORKING_DIR
+
 #setup the gpsd to listen to the correct USART port
 cd python
 python initial_uart_setup.py
