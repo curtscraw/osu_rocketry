@@ -55,15 +55,15 @@ def xbee_th():
   #xbee initialization
   xbee = serial.Serial('/dev/ttyO1', 19200);
   
-  xbee.write("payload system started\n\r")
+  xbee.write("payload system started\n")
 
   while True:
-    xbee.write(str(dict) + "\n\r")
+    xbee.write(str(dict) + "\n")
 
     #if errors were noted, clear them after printing
     if dict['xbee_errors']:
       err_lock.acquire()
-      xbee.write(error_trace + "\n\r")
+      xbee.write(error_trace + "\n")
       dict['xbee_errors'] = 0
       error_trace = ''
       err_lock.release()
@@ -132,10 +132,10 @@ def nav_th():
 def log_th():
   #open a log file
   f_log = open(DATA_LOG, 'a')
-  f_log.write("starting log\n\r")
+  f_log.write("starting log\n")
   
   while True:
-    f_log.write(str(dict) + "\n\r")
+    f_log.write(str(dict) + "\n")
     
     #sleep(.05)
 
@@ -152,6 +152,7 @@ def poll_th():
   #sensor are up, start the xbee and gps threads
   start_new_thread(xbee_th, ())
   start_new_thread(gps_th, ())
+  start_new_thread(log_th, ())
   
   while True:
     try:
@@ -162,7 +163,7 @@ def poll_th():
       #act on altimeter, in case accel fails in some way
       if (dict['agl'] > MIN_ALT) and (last_measure > MIN_ALT) and (not dict['arm_cut']):
         dict['arm_cut'] = 1
-        f_log.write("armed cutter\n\r")
+        f_log.write("armed cutter\n")
   
       if dict['arm_cut'] and (not dict['start_cut']):
         if dict['agl'] <= CHUTE_DEPLOY and last_measure <= CHUTE_DEPLOY:
@@ -188,7 +189,7 @@ def poll_th():
         
         err_lock.aqcuire()
         dict['xbee_errors'] += 1
-        error_trace += e + '\n\r'
+        error_trace += e + '\n'
         err_lock.release()
   
         alt = BMP180.BMP180(last_measure)
@@ -199,7 +200,7 @@ def poll_th():
   
         err_lock.aqcuire()
         dict['xbee_errors'] += 1
-        error_trace += 'error in recovery attempt of ' + e + '\n\r'
+        error_trace += 'error in recovery attempt of ' + e + '\n'
         err_lock.release()
   
     except:
