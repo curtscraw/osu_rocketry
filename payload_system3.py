@@ -22,6 +22,7 @@ CHUTE_DEPLOY = 330  #altitude to deploy main chute at
 MIN_ALT	     = 800  #target minimum altitude before coming back down
 ERROR_LOG = '/home/osu_rocketry/payload_error.log'
 DATA_LOG = '/home/osu_rocketry/payload_data.log'
+GPS_LOG = '/home/osu_rocketry/payload_gps.log'
 
 DEST_LAT = 0
 DEST_LONG = 0
@@ -35,6 +36,9 @@ UART.setup("UART2")
 #initialize the cutter pin, it is triggered on a high signal
 GPIO.setup(CUTTER_PIN, GPIO.OUT)
 GPIO.output(CUTTER_PIN, GPIO.LOW)
+
+#init pwm pins
+#TODO
 
 dict = {'time': 0, 'agl': 0, 'temp': 0, 'a_x': 0, 'a_y': 0, 'a_z': 0, 'g_x': 0, 'g_y': 0, 'g_z': 0, 'gps_fix': 0, 'lat': 0, 'long': 0, 'arm_cut': 0, 'start_cut': 0, 'xbee_errors': 0}
 
@@ -70,6 +74,7 @@ def xbee_th():
 def gps_th():
   session = gps.gps("localhost", "2947")
   session.stream(gps.WATCH_ENABLE | gps.WATCH_NEWSTYLE)
+  log = open(GPS_LOG, 'a')
   
   
   #this ensures that the gpsd service is running
@@ -91,6 +96,7 @@ def gps_th():
       dict['lat'] = session.fix.latitude
       dict['long'] = session.fix.longitude
       dict['gps_time']  = session.fix.utc
+      log.write(str(gps_report))
     else:
       if (not dict['gps_fix'] == 0):
 	dict['gps_fix'] = 0
@@ -120,13 +126,10 @@ def log_th():
   #open a log file
   f_log = open(DATA_LOG, 'a')
   f_log.write("starting log\n\r")
-
+  
   while True:
     f_log.write(str(dict) + "\n\r")
     
-    if (dict['gps_fix'] == 1):
-      f_log.write(str(gps_report) + "\n\r")
-
     #sleep(.05)
 
 def poll_th():
