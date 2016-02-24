@@ -107,25 +107,25 @@ def gps_th():
     sleep(1)
   
 def nav_th():
-  #activate the cutter
-  GPIO.output(CUTTER_PIN, GPIO.HIGH)
-  sleep(1) 
-  GPIO.output(CUTTER_PIN, GPIO.LOW)
+    #activate the cutter
+    GPIO.output(CUTTER_PIN, GPIO.HIGH)
+    sleep(1) 
+    GPIO.output(CUTTER_PIN, GPIO.LOW)
 
-  #initialize servos
-  servo_r = TGY6114MD.TGY6114MD_SERVO(SERVO_PIN_R)
-  servo_l = TGY6114MD.TGY6114MD_SERVO(SERVO_PIN_L)
+    #wait, and then start navigating the thing!
+    sleep(2)
 
-  #wait, and then start navigating the thing!
-  sleep(2)
+    #initialize servos
+    servo_r = TGY6114MD.TGY6114MD_SERVO(SERVO_PIN_R)
+    servo_l = TGY6114MD.TGY6114MD_SERVO(SERVO_PIN_L)
 
-  #navigate based on dict: gps_fix, lat, long
-  #navigate based on report: gps_report 
-  while True:
-    while (dict['gps_fix'] == 0):
-      #do gps fix, so do something simple
-      #want to stop as soon as the gps has a fix though
-      pass
+    #navigate based on dict: gps_fix, lat, long
+    #navigate based on report: gps_report 
+    while True:
+        while (dict['gps_fix'] == 0):
+        #do gps fix, so do something simple
+        #want to stop as soon as the gps has a fix though
+        pass
     #navigate based on destination gps
     pass
 
