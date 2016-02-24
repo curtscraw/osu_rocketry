@@ -149,7 +149,8 @@ def poll_th():
         trx_data['xbee_errors'] += 1
         error_trace += 'error in recovery attempt of ' + e + '\n'
         err_lock.release()
-  
+    except KeyboardInterrupt:
+      break
     except:
       logging.exception('Got an exception on main handler')
 
