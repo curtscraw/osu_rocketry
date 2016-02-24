@@ -9,6 +9,8 @@ DUTY_MIN        = 3
 DUTY_MAX        = 11.8
 DUTY_SPAN       = DUTY_MAX - DUTY_MIN
 INIT_ANGLE      = 1080
+ANGLE_MAX       = 2160
+ANGLE_MIN       = 0
 
 class TGY6114MD_SERVO:
     #setup the servo
@@ -31,21 +33,24 @@ class TGY6114MD_SERVO:
     #set servo to specific angle
     #default to initial angle
     def set(self, angle=INIT_ANGLE):
-        self._angle_f = float(angle)
-        duty = -.0031224786 * self._angle_f + 94.91467692   #magic numbers for TGY-6114MD
-        PWM.set_duty_cycle(self._pin, duty)                 #found by linear regression
+        if (angle < ANGLE_MAX and angle > ANGLE_MIN):
+            self._angle_f = float(angle)
+            duty = -.0031224786 * self._angle_f + 94.91467692   #magic numbers for TGY-6114MD
+            PWM.set_duty_cycle(self._pin, duty)                 #found by linear regression
 
     #reel the line in (for use in a negative feedback loop)
     def reel_in(self):
-        self._angle_f = self._angle_f + 1.0
-        duty = -.0031224786 * self._angle_f + 94.91467692   #magic numbers for TGY-6114MD
-        PWM.set_duty_cycle(self._pin, duty)                 #found by linear regression
+        if (self._angle_f < ANGLE_MAX):
+            self._angle_f = self._angle_f + 1.0
+            duty = -.0031224786 * self._angle_f + 94.91467692   #magic numbers for TGY-6114MD
+            PWM.set_duty_cycle(self._pin, duty)                 #found by linear regression
 
     #reel the line out (for use in a negative feedback loop)
     def reel_out(self):
-        self._angle_f = self._angle_f - 1.0
-        duty = -.0031224786 * self._angle_f + 94.91467692   #magic numbers for TGY-6114MD
-        PWM.set_duty_cycle(self._pin, duty)                 #found by linear regression
+        if (self._angle_f > ANGLE_MIN):
+            self._angle_f = self._angle_f - 1.0
+            duty = -.0031224786 * self._angle_f + 94.91467692   #magic numbers for TGY-6114MD
+            PWM.set_duty_cycle(self._pin, duty)                 #found by linear regression
 
     #stop servo and clean up
     def stop(self):
