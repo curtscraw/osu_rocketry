@@ -156,11 +156,14 @@ def nav_th():
    sleep(2)
 
    #initialize servos
-   servo_r = TGY6114MD.TGY6114MD_SERVO(SERVO_PIN_R)
-   servo_l = TGY6114MD.TGY6114MD_SERVO(SERVO_PIN_L)
+   #servo_r = TGY6114MD.TGY6114MD_SERVO(SERVO_PIN_R)
+   #servo_l = TGY6114MD.TGY6114MD_SERVO(SERVO_PIN_L)
+
    state = FIND_NORTH
-   max_mag = dict['m_z']
-   mag_array = [0] * 10
+   max_mag = dict['m_z']    #maximum magnetometer reading
+   mag_array = [0] * 10     #array containing last 10 magnetometer readings in z-axis
+   x_mag_array = [0] * 120  #array containing last 2 seconds of x-axis magnetometer readings
+
    direction = NONE
    #navigate based on dict: gps_fix, lat, long
    #navigate based on report: gps_report 
@@ -171,9 +174,9 @@ def nav_th():
       #We need to figure out our orintation since strength of north changes everywhere
       if state == FIND_NORTH:
          #Left turn
-         servo_l.set_angle(1260)
+         #servo_l.set_angle(1260)
          if dict['new_dat_flag'] == 1:
-            update_mag_array(mag_array)
+            update_mag_array(mag_array, x_mag_array)
             #Figure out if north of south
             #with a constant left turn, we will then see if we are east or west once we see a 0v
             count = 0
@@ -198,7 +201,7 @@ def nav_th():
          sleep(LEG_TIME)
          state = TURN
       elif state == TURN:
-         update_mag_array(mag_array)
+         update_mag_array(mag_array, x_mag_array)
          count = 0
          if direction == NORTH:
             for j in range(5):
@@ -215,14 +218,14 @@ def nav_th():
                direction = EAST
                state = STRAIGHT
          elif direction == EAST:
-            new = mag_array[len(mag_array/2):]
-            old = mag_array[:len(mag_array/2)]
+            new = mag_array[len(mag_array)/2:]
+            old = mag_array[:len(mag_array)/2]
             if sum(new)/len(new) < sum(old)/len(old):
                direction = NORTH
                state = STRAIGHT
          elif direction == WEST:
-            new = mag_array[len(mag_array/2):]
-            old = mag_array[:len(mag_array/2)]
+            new = mag_array[len(mag_array)/2:]
+            old = mag_array[:len(mag_array)/2]
             if sum(new)/len(new) > sum(old)/len(old):
                direction = SOUTH
                state = STRAIGHT   
@@ -235,18 +238,32 @@ def nav_th():
       #navigate based on destination gps
       pass
 
-def update_mag_array(mag_array):
+def update_mag_array(mag_array, x_mag_array):
  #Fresh data
-   if dict['new_dat_flag'] == 1:
+   if dict['new_dat_flag'] == 1: 
       print "new data"
       print dict['m_z']
       dict['new_dat_flag'] = 0
-      #max_mag = max(max_mag, dict['m_z'])
-      #last 10 points of data
-      for i in range(1,10):
-         mag_array[i-1] = mag_array[i]
-         mag_array[9] = dict['m_z']
+      for i in range(1,120):
+         x_mag_array[i-1] = x_mag_array[i]
+         x_mag_array[119] = dict['m_x']
+      if check_x_mag(x_mag_array):
+         #max_mag = max(max_mag, dict['m_z'])
+         #last 10 points of data
+         print "keeping data"
+         for i in range(1,10):
+            mag_array[i-1] = mag_array[i]
+            mag_array[9] = dict['m_z']
    return mag_array
+
+def check_x_mag(x_mag_array):
+    x_avg = sum(x_mag_array)/len(x_mag_array)
+    print x_avg
+    print dict['m_x']
+    if dict['m_x'] < x_avg * .95 and dict['m_x'] > x_avg * 1.05:
+        return True
+    else:
+        return False
 
 
 def log_th():
