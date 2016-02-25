@@ -45,11 +45,17 @@ GPIO.output(CUTTER_PIN, GPIO.LOW)
 
 dict = {'time': 0, 'agl': 0, 'temp': 0, 'a_x': 0, 'a_y': 0, 'a_z': 0, 'g_x': 0, 'g_y': 0, 'g_z': 0, 'gps_fix': 0, 'lat': 0, 'long': 0, 'arm_cut': 0, 'start_cut': 0, 'xbee_errors': 0}
 
+error_trace = {'error': ' '} 
+
+global gps_report 
+
 gps_report = 0
 
-error_trace = '' 
-
 err_lock = allocate_lock()
+  
+subprocess.call("/home/osu_rocketry/gpsd_setup.sh", shell=True)
+sleep(2)
+subprocess.call("/home/osu_rocketry/gpsd_setup.sh", shell=True)
 
 def xbee_th():
   #xbee initialization
@@ -63,9 +69,9 @@ def xbee_th():
     #if errors were noted, clear them after printing
     if dict['xbee_errors']:
       err_lock.acquire()
-      xbee.write(error_trace + "\n")
+      xbee.write(str(error_trace) + "\n")
       dict['xbee_errors'] = 0
-      error_trace = ''
+      error_trace['error'] = ''
       err_lock.release()
 
     #tx 2 time per second
@@ -79,10 +85,11 @@ def gps_th():
   session.stream(gps.WATCH_ENABLE | gps.WATCH_NEWSTYLE)
   log = open(GPS_LOG, 'a')
   
+  log.write("setup gps\n")
   
   #this ensures that the gpsd service is running
   #the gpsd service provides the python gps module with input from the physical module
-  #gpsd must be configured using "gpsd -n /dev/ttyO1 -F var/run/gpsd.sock"
+  #gpsd must be configured using "gpsd -n /dev/ttyO2 -F var/run/gpsd.sock"
   #prior to running this code 
   try: 
     subprocess.check_output(["pgrep", "gpsd"]) 
@@ -90,16 +97,34 @@ def gps_th():
     #gpsd isn't running yet, start it up 
     subprocess.check_output(["systemctl", "start", "gpsd.service"]) 
   
+  sleep(2)
+  
+  log.write("setup gpsd on uart2\n")
+  subprocess.call("/home/osu_rocketry/gpsd_setup.sh", shell=True)
+  sleep(2)
+  subprocess.call("/home/osu_rocketry/gpsd_setup.sh", shell=True)
+  sleep(2)
+  subprocess.call("/home/osu_rocketry/gpsd_setup.sh", shell=True)
+  sleep(2)
+  
+  err_lock.acquire()
+  dict['xbee_errors'] += 1
+  error_trace['error'] += 'gps started' + '\n'
+  err_lock.release()
+  
   while True:
     gps_report = session.next()
+    #print "test"
+    #log.write("test\n")
     if (session.fix.mode != 1):
+      #print "yaya"
       if (not dict['gps_fix'] == 1):
 	dict['gps_fix'] = 1
 
       dict['lat'] = session.fix.latitude
       dict['long'] = session.fix.longitude
-      dict['gps_time']  = session.fix.utc
-      log.write(str(gps_report))
+      dict['gps_time']  = session.fix.time
+      log.write(str(gps_report) + "\n")
     else:
       if (not dict['gps_fix'] == 0):
 	dict['gps_fix'] = 0
@@ -189,7 +214,7 @@ def poll_th():
         
         err_lock.aqcuire()
         dict['xbee_errors'] += 1
-        error_trace += e + '\n'
+        error_trace['error'] += e + '\n'
         err_lock.release()
   
         alt = BMP180.BMP180(last_measure)
@@ -200,7 +225,7 @@ def poll_th():
   
         err_lock.aqcuire()
         dict['xbee_errors'] += 1
-        error_trace += 'error in recovery attempt of ' + e + '\n'
+        error_trace['error'] += 'error in recovery attempt of ' + e + '\n'
         err_lock.release()
     except KeyboardInterrupt:
       break
