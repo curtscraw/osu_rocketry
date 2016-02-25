@@ -30,6 +30,20 @@ GPS_LOG = '/home/osu_rocketry/payload_gps.log'
 DEST_LAT = 0
 DEST_LONG = 0
 
+#states for nav
+FIND_NORTH = 0
+TURN = 1
+STRAIGHT = 2
+LANDING = 3
+
+NORTH = 0
+WEST = 1
+SOUTH = 2
+EAST = 3
+NONE = 4
+LEG_TIME = 7
+
+
 logging.basicConfig(filename=ERROR_LOG,level=logging.DEBUG,)
 
 #setup the gps and transmitter uart ports
@@ -43,7 +57,9 @@ GPIO.output(CUTTER_PIN, GPIO.LOW)
 #init pwm pins
 #TODO
 
-dict = {'time': 0, 'agl': 0, 'temp': 0, 'a_x': 0, 'a_y': 0, 'a_z': 0, 'g_x': 0, 'g_y': 0, 'g_z': 0, 'gps_fix': 0, 'lat': 0, 'long': 0, 'arm_cut': 0, 'start_cut': 0, 'xbee_errors': 0, 'm_x': 0, 'm_y': 0, 'm_z': 0}
+#Sorry Curtis
+#I cant think of a more elegant way to add this flag
+dict = {'time': 0, 'agl': 0, 'temp': 0, 'a_x': 0, 'a_y': 0, 'a_z': 0, 'g_x': 0, 'g_y': 0, 'g_z': 0, 'gps_fix': 0, 'lat': 0, 'long': 0, 'arm_cut': 0, 'start_cut': 0, 'xbee_errors': 0, 'm_x': 0, 'm_y': 0, 'm_z': 0, 'new_dat_flag': 0}
 
 error_trace = {'error': ' '}
 
@@ -132,29 +148,82 @@ def gps_th():
     sleep(1)
   
 def nav_th():
-    #activate the cutter
-    GPIO.output(CUTTER_PIN, GPIO.HIGH)
-    sleep(1) 
-    GPIO.output(CUTTER_PIN, GPIO.LOW)
+   #activate the cutter
+   GPIO.output(CUTTER_PIN, GPIO.HIGH)
+   sleep(1) 
+   GPIO.output(CUTTER_PIN, GPIO.LOW)
 
-    #wait, and then start navigating the thing!
-    sleep(2)
+   #wait, and then start navigating the thing!
+   sleep(2)
 
-    #initialize servos
-    servo_r = TGY6114MD.TGY6114MD_SERVO(SERVO_PIN_R)
-    servo_l = TGY6114MD.TGY6114MD_SERVO(SERVO_PIN_L)
+   #initialize servos
+   servo_r = TGY6114MD.TGY6114MD_SERVO(SERVO_PIN_R)
+   servo_l = TGY6114MD.TGY6114MD_SERVO(SERVO_PIN_L)
+   state = FIND_NORTH
+   max_mag = dict['m_z']
+   mag_array = [None] * 10
+   direction = NONE
+   #navigate based on dict: gps_fix, lat, long
+   #navigate based on report: gps_report 
+   while True:
+      #while (dict['gps_fix'] == 0):
+      #servo_r.set_angle(1080)
+      #sleep(5)
+      #We need to figure out our orintation since strength of north changes everywhere
+      if state == FIND_NORTH:
+         #Left turn
+         servo_l.set_angle(1260)
+         if dict['new_dat_flag'] == 1:
+            update_mag_array(mag_array)
+            #Figure out if north of south
+            #with a constant left turn, we will then see if we are east or west once we see a 0v
+            count = 0
+            #Use the last 10 datapoints to guaruntee we are north or south facing
+            for j in range(10):
+               if mag_array[j] == NONE:
+                  print "too early"
+                  break
+               if mag_array[j] > 0:
+                  count += 1
+               if mag_array[j] < 0:
+                  count -= 1
+            if count == 10:
+               direction = NORTH
+               state = STRAIGHT
+               print "POS"
+            elif count == -10:
+               direction = SOUTH
+               state = STRAIGHT
+               print "NEG"
+      elif state == STRAIGHT:
+         print "straight"
+         sleep(LEG_TIME)
+         state = TURN
+      elif state == TURN:
+         update_mag_array(mag_array)
+         print "currently going"
+         print direction
+       
 
-    #navigate based on dict: gps_fix, lat, long
-    #navigate based on report: gps_report 
-    while True:
-        while (dict['gps_fix'] == 0):
-            servo_r.reel_in()
-            servo_l.reel_in()
-            #no gps fix, so do something simple
-            #want to stop as soon as the gps has a fix though
-            pass
-        #navigate based on destination gps
-        pass
+            
+      #no gps fix, so do something simple
+      #want to stop as soon as the gps has a fix though
+      #pass
+      #navigate based on destination gps
+      pass
+
+def update_mag_array(mag_array):
+ #Fresh data
+   if dict['new_dat_flag'] == 1:
+      dict['new_dat_flag'] = 0
+      #max_mag = max(max_mag, dict['m_z'])
+      #last 10 points of data
+      for i in range(1,9):
+         mag_array[i-1] = mag_array[i]
+      mag_array[9] = dict['m_z']
+      print dict['m_z']
+   return mag_array
+
 
 def log_th():
   #open a log file
@@ -217,7 +286,8 @@ def poll_th():
       dict['m_x'] = x
       dict['m_y'] = y
       dict['m_z'] = z
-  
+      dict['new_dat_flag'] = 1
+
     except IOError as e:
       try:
         logging.exception('Got I2C exception on main handler' + str(dict['time']))
