@@ -43,9 +43,9 @@ GPIO.output(CUTTER_PIN, GPIO.LOW)
 #init pwm pins
 #TODO
 
-dict = {'time': 0, 'agl': 0, 'temp': 0, 'a_x': 0, 'a_y': 0, 'a_z': 0, 'g_x': 0, 'g_y': 0, 'g_z': 0, 'gps_fix': 0, 'lat': 0, 'long': 0, 'arm_cut': 0, 'start_cut': 0, 'xbee_errors': 0}
+dict = {'time': 0, 'agl': 0, 'temp': 0, 'a_x': 0, 'a_y': 0, 'a_z': 0, 'g_x': 0, 'g_y': 0, 'g_z': 0, 'gps_fix': 0, 'lat': 0, 'long': 0, 'arm_cut': 0, 'start_cut': 0, 'xbee_errors': 0, 'm_x': 0, 'm_y': 0, 'm_z': 0}
 
-error_trace = {'error': ' '} 
+error_trace = {'error': ' '}
 
 global gps_report 
 
@@ -148,6 +148,8 @@ def nav_th():
     #navigate based on report: gps_report 
     while True:
         while (dict['gps_fix'] == 0):
+            servo_r.reel_in()
+            servo_l.reel_in()
             #no gps fix, so do something simple
             #want to stop as soon as the gps has a fix though
             pass
@@ -210,7 +212,11 @@ def poll_th():
       dict['g_x'] = x
       dict['g_y'] = y
       dict['g_z'] = z
-  
+
+      (x, y, z) = accel.read_magnetometer()
+      dict['m_x'] = x
+      dict['m_y'] = y
+      dict['m_z'] = z
   
     except IOError as e:
       try:

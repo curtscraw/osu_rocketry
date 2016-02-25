@@ -28,7 +28,8 @@ class TGY6114MD_SERVO:
         if (pin != -1):
             self._pin = pin
             self.pin_set = True
-            PWM.start(self._pin, (100-DUTY_MIN), 60.0, 1)
+            duty = -.0031224786 * INIT_ANGLE + 94.91467692   #magic numbers for TGY-6114MD
+            PWM.start(self._pin, duty, 60.0, 1)
         else:
             self._pin = -1
             self.pin_set = False
@@ -39,9 +40,10 @@ class TGY6114MD_SERVO:
         if (angle < ANGLE_MAX and angle > ANGLE_MIN):
             self._angle_f = float(angle)
             duty = -.0031224786 * self._angle_f + 94.91467692   #magic numbers for TGY-6114MD
-            PWM.start(self._pin, (100-DUTY_MIN), 60.0, 1)
             PWM.set_duty_cycle(self._pin, duty)                 #found by linear regression
 
+    #set servo to specific length
+    #default to initial length
     def set_length(self, length=INIT_LENGTH):
         angle = length/(PULLEY_DIAMETER_IN * pi) * 360
         if (angle < ANGLE_MAX and angle > ANGLE_MIN):
