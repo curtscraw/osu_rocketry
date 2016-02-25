@@ -161,7 +161,7 @@ def nav_th():
 
    state = FIND_NORTH
    max_mag = dict['m_z']    #maximum magnetometer reading
-   mag_array = [0] * 10     #array containing last 10 magnetometer readings in z-axis
+   mag_array = [0] * 20     #array containing last 10 magnetometer readings in z-axis
    x_mag_array = [0] * 120  #array containing last 2 seconds of x-axis magnetometer readings
 
    direction = NONE
@@ -204,17 +204,17 @@ def nav_th():
          update_mag_array(mag_array, x_mag_array)
          count = 0
          if direction == NORTH:
-            for j in range(5):
-               if mag_array[j+5] < 0:
+            for j in range(10):
+               if mag_array[j+10] < 0:
                   count -= 1
-            if count == -5:
+            if count == -10:
                direction = WEST
                state = STRAIGHT
          elif direction == SOUTH:
-            for j in range(5):
-               if mag_array[j+5] > 0:
+            for j in range(10):
+               if mag_array[j+10] > 0:
                   count += 1
-            if count == 5:
+            if count == 10:
                direction = EAST
                state = STRAIGHT
          elif direction == EAST:
@@ -251,16 +251,16 @@ def update_mag_array(mag_array, x_mag_array):
          #max_mag = max(max_mag, dict['m_z'])
          #last 10 points of data
          print "keeping data"
-         for i in range(1,10):
+         for i in range(1,20):
             mag_array[i-1] = mag_array[i]
-            mag_array[9] = dict['m_z']
+            mag_array[19] = dict['m_z']
    return mag_array
 
 def check_x_mag(x_mag_array):
     x_avg = sum(x_mag_array)/len(x_mag_array)
     print x_avg
     print dict['m_x']
-    if dict['m_x'] < x_avg * .95 and dict['m_x'] > x_avg * 1.05:
+    if dict['m_x'] < x_avg * .92 and dict['m_x'] > x_avg * 1.08:
         return True
     else:
         return False
