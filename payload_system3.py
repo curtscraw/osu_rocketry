@@ -18,7 +18,7 @@ import logging
 #general needed values
 CUTTER_PIN = "P9_12"
 SERVO_PIN_L = "P8_13"
-SERVO_PIN_R = "P8_19"
+SERVO_PIN_R = "P9_14"
 TRX_DEVICE = "/dev/ttyO1"
 POWER_ON_ALT = 79   #altitude in meters of power on
 CHUTE_DEPLOY = 330  #altitude to deploy main chute at
@@ -123,11 +123,11 @@ def nav_th():
     #navigate based on report: gps_report 
     while True:
         while (dict['gps_fix'] == 0):
-        #do gps fix, so do something simple
-        #want to stop as soon as the gps has a fix though
+            #no gps fix, so do something simple
+            #want to stop as soon as the gps has a fix though
+            pass
+        #navigate based on destination gps
         pass
-    #navigate based on destination gps
-    pass
 
 def log_th():
   #open a log file

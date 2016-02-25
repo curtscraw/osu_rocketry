@@ -4,7 +4,7 @@
 
 #dependencies of these classes
 import Adafruit_BBIO.PWM as PWM
-import pi from math
+from math import pi 
 
 DUTY_MIN            = 3
 DUTY_MAX            = 11.8
@@ -39,6 +39,7 @@ class TGY6114MD_SERVO:
         if (angle < ANGLE_MAX and angle > ANGLE_MIN):
             self._angle_f = float(angle)
             duty = -.0031224786 * self._angle_f + 94.91467692   #magic numbers for TGY-6114MD
+            PWM.start(self._pin, (100-DUTY_MIN), 60.0, 1)
             PWM.set_duty_cycle(self._pin, duty)                 #found by linear regression
 
     def set_length(self, length=INIT_LENGTH):
