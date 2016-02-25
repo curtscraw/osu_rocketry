@@ -52,4 +52,13 @@ python initial_uart_setup.py
 gpsd -n /dev/ttyO2 -F /var/run/gpsd.sock
 cd $WORKING_DIR
 
+chmod +x gpsd_setup.sh
+
+
+echo "run payload with: "
+echo "nohup payload_start.py &"
+
+echo "run avionics with: "
+echo "nohup avionics_start.py &"
+
 exit

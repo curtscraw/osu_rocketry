@@ -4,7 +4,7 @@ from time import sleep
 import subprocess
 import sys
 
-UART.setup("UART1")
+UART.setup("UART2")
 
 session = gps.gps("localhost", "2947")
 session.stream(gps.WATCH_ENABLE | gps.WATCH_NEWSTYLE)
