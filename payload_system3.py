@@ -153,6 +153,10 @@ def poll_th():
   start_new_thread(xbee_th, ())
   start_new_thread(gps_th, ())
   start_new_thread(log_th, ())
+  #for servo testing
+  #remove this part after testing
+  #TODO
+  start_new_thread(nav_th, ())
   
   while True:
     try:

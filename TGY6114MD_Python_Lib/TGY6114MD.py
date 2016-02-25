@@ -4,13 +4,16 @@
 
 #dependencies of these classes
 import Adafruit_BBIO.PWM as PWM
+import pi from math
 
-DUTY_MIN        = 3
-DUTY_MAX        = 11.8
-DUTY_SPAN       = DUTY_MAX - DUTY_MIN
-INIT_ANGLE      = 1080
-ANGLE_MAX       = 2160
-ANGLE_MIN       = 0
+DUTY_MIN            = 3
+DUTY_MAX            = 11.8
+DUTY_SPAN           = DUTY_MAX - DUTY_MIN
+INIT_ANGLE          = 1080
+ANGLE_MAX           = 2160
+ANGLE_MIN           = 0
+PULLEY_DIAMETER_IN  = 1.0
+INIT_LENGTH         = INIT_ANGLE/360 * PULLEY_DIAMETER_IN * pi
 
 class TGY6114MD_SERVO:
     #setup the servo
@@ -18,7 +21,7 @@ class TGY6114MD_SERVO:
         #Configure servo motor
         self._config_servo(pin)
         if (self.pin_set == True):
-            self.set()
+            self.set_angle()
 
     def _confiig_servo(self, pin):
         #detirmine side of servo
@@ -32,11 +35,19 @@ class TGY6114MD_SERVO:
 
     #set servo to specific angle
     #default to initial angle
-    def set(self, angle=INIT_ANGLE):
+    def set_angle(self, angle=INIT_ANGLE):
         if (angle < ANGLE_MAX and angle > ANGLE_MIN):
             self._angle_f = float(angle)
             duty = -.0031224786 * self._angle_f + 94.91467692   #magic numbers for TGY-6114MD
             PWM.set_duty_cycle(self._pin, duty)                 #found by linear regression
+
+    def set_length(self, length=INIT_LENGTH):
+        angle = length/(PULLEY_DIAMETER_IN * pi) * 360
+        if (angle < ANGLE_MAX and angle > ANGLE_MIN):
+            self._angle_f = float(angle)
+            duty = -.0031224786 * self._angle_f + 94.91467692   #magic numbers for TGY-6114MD
+            PWM.set_duty_cycle(self._pin, duty)                 #found by linear regression
+
 
     #reel the line in (for use in a negative feedback loop)
     def reel_in(self):
