@@ -44,7 +44,7 @@ NONE = 4
 LEG_TIME = 7
 
 
-logging.basicConfig(filename=ERROR_LOG,level=logging.DEBUG,)
+logging.basicConfig(filename=ERROR_LOG,level=logging.WARNING,)
 
 #setup the gps and transmitter uart ports
 UART.setup("UART1")

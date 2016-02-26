@@ -16,12 +16,12 @@ import logging
 
 #general needed values
 TRX_DEVICE = "/dev/ttyO1"
-POWER_ON_ALT = 79   #altitude in meters of power on
+POWER_ON_ALT = 1414   #altitude in meters of power on
 ERROR_LOG = '/home/osu_rocketry/avionics_error.log'
 DATA_LOG = '/home/osu_rocketry/avionics_data.log'
 GPS_LOG = '/home/osu_rocketry/avionics_gps.log'
 
-logging.basicConfig(filename=ERROR_LOG,level=logging.DEBUG,)
+logging.basicConfig(filename=ERROR_LOG,level=logging.WARNING,)
 
 #setup the gps and transmitter uart ports
 UART.setup("UART1")
