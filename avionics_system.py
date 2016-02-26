@@ -133,10 +133,13 @@ def poll_th():
   gyro = LSM9DS0.LSM9DS0_GYRO(LSM9DS0.LSM9DS0_GYRODR_95HZ | LSM9DS0.LSM9DS0_GYRO_CUTOFF_1, LSM9DS0.LSM9DS0_GYROSCALE_2000DPS)
   accel = LSM9DS0.LSM9DS0_ACCEL()
   
+  f_log = open(DATA_LOG, 'a')
+  f_log.write("starting log\n")
+  
   #sensor are up, start the xbee and gps threads
   start_new_thread(xbee_th, ())
   start_new_thread(gps_th, ())
-  start_new_thread(log_th, ())
+ # start_new_thread(log_th, ())
   
   while True:
     try:
@@ -153,6 +156,8 @@ def poll_th():
       trx_data['g_x'] = x
       trx_data['g_y'] = y
       trx_data['g_z'] = z
+    
+      f_log.write(str(trx_data) + "\n")
   
   
     except IOError as e:

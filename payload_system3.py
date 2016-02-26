@@ -20,7 +20,7 @@ CUTTER_PIN = "P9_12"
 SERVO_PIN_L = "P8_13"
 SERVO_PIN_R = "P9_14"
 TRX_DEVICE = "/dev/ttyO1"
-POWER_ON_ALT = 79   #altitude in meters of power on
+POWER_ON_ALT = 1414   #altitude in meters of power on
 CHUTE_DEPLOY = 910  #altitude to deploy main chute at
 MIN_ALT	     = 1500  #target minimum altitude before coming back down
 ERROR_LOG = '/home/osu_rocketry/payload_error.log'
@@ -310,12 +310,15 @@ def poll_th():
   gyro = LSM9DS0.LSM9DS0_GYRO(LSM9DS0.LSM9DS0_GYRODR_95HZ | LSM9DS0.LSM9DS0_GYRO_CUTOFF_1, LSM9DS0.LSM9DS0_GYROSCALE_2000DPS)
   accel = LSM9DS0.LSM9DS0_ACCEL()
   
+  f_log = open(DATA_LOG, 'a')
+  f_log.write("starting log\n")
+  
   last_measure = POWER_ON_ALT
   
   #sensor are up, start the xbee and gps threads
   start_new_thread(xbee_th, ())
   start_new_thread(gps_th, ())
-  start_new_thread(log_th, ())
+  #start_new_thread(log_th, ())
   #for servo testing
   #remove this part after testing
   #TODO
@@ -354,6 +357,8 @@ def poll_th():
       dict['m_y'] = y
       dict['m_z'] = z
       dict['new_dat_flag'] = 1
+    
+      f_log.write(str(dict) + "\n")
 
     except IOError as e:
       try:
