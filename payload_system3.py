@@ -15,13 +15,14 @@ from thread import start_new_thread, allocate_lock
 import logging
 
 #general needed values
+X_MAG_ARR_LEN = 120
 CUTTER_PIN = "P9_12"
 SERVO_PIN_L = "P8_13"
 SERVO_PIN_R = "P9_14"
 TRX_DEVICE = "/dev/ttyO1"
 POWER_ON_ALT = 79   #altitude in meters of power on
-CHUTE_DEPLOY = 330  #altitude to deploy main chute at
-MIN_ALT	     = 800  #target minimum altitude before coming back down
+CHUTE_DEPLOY = 910  #altitude to deploy main chute at
+MIN_ALT	     = 1500  #target minimum altitude before coming back down
 ERROR_LOG = '/home/osu_rocketry/payload_error.log'
 DATA_LOG = '/home/osu_rocketry/payload_data.log'
 GPS_LOG = '/home/osu_rocketry/payload_gps.log'
@@ -156,13 +157,14 @@ def nav_th():
    sleep(2)
 
    #initialize servos
-   #servo_r = TGY6114MD.TGY6114MD_SERVO(SERVO_PIN_R)
-   #servo_l = TGY6114MD.TGY6114MD_SERVO(SERVO_PIN_L)
+   servo_r = TGY6114MD.TGY6114MD_SERVO(SERVO_PIN_R)
+   servo_l = TGY6114MD.TGY6114MD_SERVO(SERVO_PIN_L)
 
    state = FIND_NORTH
    max_mag = dict['m_z']    #maximum magnetometer reading
-   mag_array = [0] * 20     #array containing last 10 magnetometer readings in z-axis
-   x_mag_array = [0] * 120  #array containing last 2 seconds of x-axis magnetometer readings
+   z_mag_array = [0] * 10     #array containing last 10 magnetometer readings in z-axis
+   y_mag_array = [0] * 10     #array containing last 10 magnetometer readings in z-axis
+   x_mag_array = [0] * X_MAG_ARR_LEN  #array containing last 2 seconds of x-axis magnetometer readings
 
    direction = NONE
    #navigate based on dict: gps_fix, lat, long
@@ -172,95 +174,119 @@ def nav_th():
       #servo_r.set_angle(1080)
       #sleep(5)
       #We need to figure out our orintation since strength of north changes everywhere
+      if dict['agl'] < 90:
+         state = LANDING
+      #print dict['agl']
       if state == FIND_NORTH:
          #Left turn
-         #servo_l.set_angle(1260)
+         servo_l.set_angle(1170)
          if dict['new_dat_flag'] == 1:
-            update_mag_array(mag_array, x_mag_array)
+            z_mag_array, y_mag_array = update_mag_array(z_mag_array, y_mag_array, x_mag_array)
             #Figure out if north of south
             #with a constant left turn, we will then see if we are east or west once we see a 0v
             count = 0
             #Use the last 10 datapoints to guaruntee we are north or south facing
             for j in range(10):
-               if mag_array[j] > 0:
+               if z_mag_array[j] > 0:
                   count += 1
-               if mag_array[j] < 0:
+               if z_mag_array[j] < 0:
                   count -= 1
             if count == 10:
-               direction = NORTH
-               state = STRAIGHT
-               print "NORTH-ISH"
-            elif count == -10:
                direction = SOUTH
                state = STRAIGHT
-               print "SOUTH-ISH"
+               #print "SOUTH-ISH"
+            elif count == -10:
+               direction = NORTH 
+               state = STRAIGHT
+               #print "NORTH-ISH"
       elif state == STRAIGHT:
-         print "straight for 7 secs"
-         print "I think I am (0 north, 1 west, 2 south, 3 east):"
-         print direction
+         servo_l.set_angle(1080)
+         #print "straight for 7 secs"
+         #print "I think I am (0 north, 1 west, 2 south, 3 east):"
+         #print direction
          sleep(LEG_TIME)
          state = TURN
       elif state == TURN:
-         update_mag_array(mag_array, x_mag_array)
+         servo_l.set_angle(1170)
+         z_mag_array, y_mag_array = update_mag_array(z_mag_array, y_mag_array, x_mag_array)
          count = 0
-         if direction == NORTH:
+         if direction == SOUTH:
             for j in range(10):
-               if mag_array[j+10] < 0:
+               if z_mag_array[j] < 0:
                   count -= 1
             if count == -10:
-               direction = WEST
+               direction = EAST 
                state = STRAIGHT
-         elif direction == SOUTH:
+         elif direction == NORTH:
             for j in range(10):
-               if mag_array[j+10] > 0:
+               if z_mag_array[j] > 0:
                   count += 1
             if count == 10:
-               direction = EAST
-               state = STRAIGHT
-         elif direction == EAST:
-            new = mag_array[len(mag_array)/2:]
-            old = mag_array[:len(mag_array)/2]
-            if sum(new)/len(new) < sum(old)/len(old):
-               direction = NORTH
+               direction = WEST
                state = STRAIGHT
          elif direction == WEST:
-            new = mag_array[len(mag_array)/2:]
-            old = mag_array[:len(mag_array)/2]
-            if sum(new)/len(new) > sum(old)/len(old):
+            for j in range(10):
+               if y_mag_array[j] < 0:
+                  count += 1
+            if count == 10:
+             
+            #new = mag_array[len(mag_array)/2:]
+            #old = mag_array[:len(mag_array)/2]
+            #if sum(new)/len(new) < sum(old)/len(old):
+               #del mag_array[:]
+               #mag_array = [0] * 20     #array containing last 10 magnetometer readings in z-axis
                direction = SOUTH
+               state = STRAIGHT
+         elif direction == EAST:
+            for j in range(10):
+               if y_mag_array[j] > 0:
+                  count -= 1
+            if count == -10:
+             
+            #new = mag_array[len(mag_array)/2:]
+            #old = mag_array[:len(mag_array)/2]
+            #if sum(new)/len(new) > sum(old)/len(old):
+               #del mag_array[:]
+               #mag_array = [0] * 20     #array containing last 10 magnetometer readings in z-axis
+               direction = NORTH
                state = STRAIGHT   
-       
-
-            
+      elif state == LANDING:
+         servo_l.set_angle(1080)
+         servo_r.set_angle(1080)
+         print "landing bitches"      
       #no gps fix, so do something simple
       #want to stop as soon as the gps has a fix though
       #pass
       #navigate based on destination gps
       pass
 
-def update_mag_array(mag_array, x_mag_array):
+def update_mag_array(z_mag_array, y_mag_array, x_mag_array):
  #Fresh data
    if dict['new_dat_flag'] == 1: 
-      print "new data"
-      print dict['m_z']
+      #print "new data"
+      #print dict['m_z']
+      #print dict['m_y']
       dict['new_dat_flag'] = 0
-      for i in range(1,120):
+      for i in range(1,X_MAG_ARR_LEN):
          x_mag_array[i-1] = x_mag_array[i]
-         x_mag_array[119] = dict['m_x']
-      if check_x_mag(x_mag_array):
+         x_mag_array[X_MAG_ARR_LEN - 1] = dict['m_x']
+      if check_data(x_mag_array):
          #max_mag = max(max_mag, dict['m_z'])
          #last 10 points of data
-         print "keeping data"
-         for i in range(1,20):
-            mag_array[i-1] = mag_array[i]
-            mag_array[19] = dict['m_z']
-   return mag_array
+         #print "keeping data"
+         for i in range(1,10):
+            z_mag_array[i-1] = z_mag_array[i]
+            z_mag_array[9] = dict['m_z']
+            y_mag_array[i-1] = y_mag_array[i]
+            y_mag_array[9] = dict['m_y']
+   
+   return z_mag_array, y_mag_array
 
-def check_x_mag(x_mag_array):
+def check_data(x_mag_array):
     x_avg = sum(x_mag_array)/len(x_mag_array)
-    print x_avg
-    print dict['m_x']
-    if dict['m_x'] < x_avg * .92 and dict['m_x'] > x_avg * 1.08:
+    #print x_avg
+    #print dict['m_x']
+    if dict['m_x'] < x_avg * .92 and dict['m_x'] > x_avg * 1.08 and abs(dict['g_y']) < 70 and abs(dict['g_z']) < 70 and dict['g_x'] > -30:
         return True
     else:
         return False
@@ -293,7 +319,7 @@ def poll_th():
   #for servo testing
   #remove this part after testing
   #TODO
-  start_new_thread(nav_th, ())
+  #start_new_thread(nav_th, ())
   
   while True:
     try:
