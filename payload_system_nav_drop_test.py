@@ -7,6 +7,7 @@ import TGY6114MD
 import datetime
 import serial
 import time
+import math
 from time import sleep
 from sys import exit
 import subprocess
@@ -21,9 +22,14 @@ CUTTER_PIN = "P9_12"
 SERVO_PIN_L = "P8_13"
 SERVO_PIN_R = "P9_14"
 TRX_DEVICE = "/dev/ttyO1"
+#These are the important values to change for every flight!!
 POWER_ON_ALT = 79   #altitude in meters of power on
 CHUTE_DEPLOY = 600  #altitude to deploy main chute at
 MIN_ALT	     = 900  #target minimum altitude before coming back down
+DEST_LAT     = 44.5739
+DEST_LONG    = -123.279277
+
+
 ERROR_LOG = '/home/osu_rocketry/payload_error.log'
 DATA_LOG = '/home/osu_rocketry/payload_data.log'
 GPS_LOG = '/home/osu_rocketry/payload_gps.log'
@@ -158,8 +164,8 @@ def nav_th():
    sleep(2)
 
    #initialize servos
-   servo_r = TGY6114MD.TGY6114MD_SERVO(SERVO_PIN_R)
-   servo_l = TGY6114MD.TGY6114MD_SERVO(SERVO_PIN_L)
+   #servo_r = TGY6114MD.TGY6114MD_SERVO(SERVO_PIN_R)
+   #servo_l = TGY6114MD.TGY6114MD_SERVO(SERVO_PIN_L)
 
    state = FIND_NORTH
    max_mag = dict['m_z']    #maximum magnetometer reading
@@ -173,19 +179,41 @@ def nav_th():
    print 'starting nav'
    dict['direction'] = direction
    dict['state'] = state
+   old_long = 0
    #navigate based on dict: gps_fix, lat, long
    #navigate based on report: gps_report 
    while True:
-         while (dict['gps_fix'] == 0):
-         #We need to figure out our orintation since strength of north changes everywhere
-       
+      if dict['gps_fix'] == 1 and old_long != dict["long"]:
+         if old_long == 0:
+            origin_angle = math.degrees(math.atan2((dict["long"]-DEST_LONG),(dict["lat"]-DEST_LAT)))
+            print origin_angle
+         else:
+            print "GPS UPDATED"
+            print dict["long"]
+            print dict["lat"]
+            long_dif = dict["long"] - old_long
+            lat_dif = dict["lat"] - old_lat
+            new_angle = math.degrees(math.atan2((dict["long"]-DEST_LONG),(dict["lat"]-DEST_LAT)))
+            #right turn
+               if ((new angle >= 0) and (new_angle > origin_angle or new angle < (180 - origin_angle))) or ((new_angle < 0) and (new_angle > origin_angle or new_angle < (-180 + origin_angle)): 
+                  print "Right Turn"
+               else:
+                  print "Left Turn"
+         
+
+         old_long = dict["long"]
+         old_lat = dict["lat"]
+           
+
+      elif 0:
          if dict['agl'] < 30:
             state = LANDING
             servo_l.set_angle(1080)
             servo_r.set_angle(1080)
          if state == FIND_NORTH:
+      #We need to figure out our orintation since strength of north changes everywhere
             #Left turn
-            servo_l.set_angle(1170)
+            servo_l.set_angle(1180)
             if dict['new_dat_flag'] == 1:
                z_mag_array, y_mag_array = update_mag_array(z_mag_array, y_mag_array, x_mag_array)
                #Figure out if north of south
@@ -380,12 +408,12 @@ def poll_th():
   
   #sensor are up, start the xbee and gps threads
   start_new_thread(xbee_th, ())
-  #start_new_thread(gps_th, ())
+  start_new_thread(gps_th, ())
   #start_new_thread(log_th, ())
   #for servo testing
   #remove this part after testing
   #TODO
-  #start_new_thread(nav_th, ())
+  start_new_thread(nav_th, ())
   
   while True:
     try:
