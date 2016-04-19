@@ -171,158 +171,157 @@ def nav_th():
    r_angle = 1080
    l_angle = 1080
    print 'starting nav'
+   dict['direction'] = direction
+   dict['state'] = state
    #navigate based on dict: gps_fix, lat, long
    #navigate based on report: gps_report 
    while True:
-      #while (dict['gps_fix'] == 0):
-      #servo_r.set_angle(1080)
-      #sleep(5)
-      #We need to figure out our orintation since strength of north changes everywhere
-      dict['direction'] = direction
-      dict['state'] = state
-      #TODO
-      if dict['agl'] < 30:
-         state = LANDING
-         servo_l.set_angle(1080)
-         servo_r.set_angle(1080)
-      #print dict['agl']
-      if state == FIND_NORTH:
-         #Left turn
-         servo_l.set_angle(1170)
-         if dict['new_dat_flag'] == 1:
-            z_mag_array, y_mag_array = update_mag_array(z_mag_array, y_mag_array, x_mag_array)
-            #Figure out if north of south
-            #with a constant left turn, we will then see if we are east or west once we see a 0v
-            count = 0
-            #Use the last 10 datapoints to guaruntee we are north or south facing
-            for j in range(10):
-               if z_mag_array[j] > 0:
-                  count += 1
-               if z_mag_array[j] < 0:
-                  count -= 1
-            if count == 10:
-               direction = SOUTH
-               state = STRAIGHT
-               print "SOUTH-ISH"
-            elif count == -10:
-               direction = NORTH 
-               state = STRAIGHT
-               print "NORTH-ISH"
-      elif state == STRAIGHT:
-         #servo_l.set_angle(1080)
-         #servo_r.set_angle(1080)
-         print "straight for 7 secs"
-         print "I think I am (0 north, 1 west, 2 south, 3 east):"
-         print direction
-         #sleep(LEG_TIME)
-         end = time.time() + 15
-         while time.time() < end:
-            #STRAIGHT CODE GOES HERE
-            if dict['new_dat_flag'] == 1: 
+         while (dict['gps_fix'] == 0):
+         #We need to figure out our orintation since strength of north changes everywhere
+       
+         if dict['agl'] < 30:
+            state = LANDING
+            servo_l.set_angle(1080)
+            servo_r.set_angle(1080)
+         if state == FIND_NORTH:
+            #Left turn
+            servo_l.set_angle(1170)
+            if dict['new_dat_flag'] == 1:
                z_mag_array, y_mag_array = update_mag_array(z_mag_array, y_mag_array, x_mag_array)
-               if direction == NORTH:
-                 
-                  if y_mag_array[9] < 0:
-                     l_angle += 10
+               #Figure out if north of south
+               #with a constant left turn, we will then see if we are east or west once we see a 0v
+               count = 0
+               #Use the last 10 datapoints to guaruntee we are north or south facing
+               for j in range(10):
+                  if z_mag_array[j] > 0:
+                     count += 1
+                  if z_mag_array[j] < 0:
+                     count -= 1
+               if count == 10:
+                  direction = SOUTH
+                  state = STRAIGHT
+                  print "SOUTH-ISH"
+               elif count == -10:
+                  direction = NORTH 
+                  state = STRAIGHT
+                  print "NORTH-ISH"
+         elif state == STRAIGHT:
+            print "straight for 7 secs"
+            print "I think I am (0 north, 1 west, 2 south, 3 east):"
+            print direction
+            #sleep(LEG_TIME)
+            end = time.time() + 15
+            while time.time() < end:
+               #STRAIGHT CODE GOES HERE
+               if dict['new_dat_flag'] == 1: 
+                  z_mag_array, y_mag_array = update_mag_array(z_mag_array, y_mag_array, x_mag_array)
+                  if direction == NORTH:
+                    
+                     if y_mag_array[9] < 0:
+                        l_angle += 5
+                        r_angle -= 5
+                     else:
+                        r_angle += 5
+                        l_angle -= 5
+                        
+                  elif direction == SOUTH:
+                     if y_mag_array[9] > 0:
+                        l_angle += 5
+                        r_angle -= 5
+                     else:
+                        r_angle += 5
+                        l_angle -= 5
+                  elif direction == EAST:
+                     if z_mag_array[9] < 0:
+                        r_angle -= 5
+                        l_angle += 5
+                     else:
+                        l_angle -= 5
+                        r_angle += 5
+                  elif direction == WEST:
+                     if z_mag_array[9] > 0:
+                        r_angle += 5
+                        l_angle -= 5
+                     else:
+                        l_angle += 5
+                        r_angle -= 5
+                        
+                  if r_angle > 1260:
+                    r_angle = 1260
+                  if l_angle > 1260:
+                    l_angle = 1260
+                  if r_angle < 1080:
                      r_angle = 1080
-                  else:
-                     r_angle += 10
+                  if l_angle < 1080:
                      l_angle = 1080
-                     
-               elif direction == SOUTH:
-                  if y_mag_array[9] > 0:
-                     l_angle += 10
-                     r_angle = 1080
-                  else:
-                     r_angle += 10
-                     l_angle = 1080
-               elif direction == EAST:
-                  if z_mag_array[9] < 0:
-                     r_angle -= 10
-                     l_angle = 1080
-                  else:
-                     l_angle += 10
-                     r_angle = 1080
-               elif direction == WEST:
-                  if z_mag_array[9] > 0:
-                     r_angle += 10
-                     l_angle = 1080
-                  else:
-                     l_angle += 10
-                     r_angle = 1080
-                     
-               if r_angle > 1170:
-                 r_angle = 1170
-               if l_angle > 1170:
-                 l_angle = 1170
-                 
-               servo_r.set_angle(r_angle)
-               servo_l.set_angle(l_angle)
-         state = TURN
-         print 'Done going straight. now turning'
-      elif state == TURN:
-         servo_l.set_angle(1170)
-         servo_r.set_angle(1080)
-         z_mag_array, y_mag_array = update_mag_array(z_mag_array, y_mag_array, x_mag_array)
-         count = 0
-         if direction == SOUTH:
-            for j in range(10):
-               if z_mag_array[j] < 0:
-                  count -= 1
-            if count == -10:
-               direction = EAST
-               print 'going straight in direction:'
-               print direction
-               state = STRAIGHT
-         elif direction == NORTH:
-            for j in range(10):
-               if z_mag_array[j] > 0:
-                  count += 1
-            if count == 10:
-               direction = WEST
-               print 'going straight in direction:'
-               print direction
-               state = STRAIGHT
-         elif direction == WEST:
-            for j in range(10):
-               if y_mag_array[j] < 0:
-                  count += 1
-            if count == 10:
-             
-            #new = mag_array[len(mag_array)/2:]
-            #old = mag_array[:len(mag_array)/2]
-            #if sum(new)/len(new) < sum(old)/len(old):
-               #del mag_array[:]
-               #mag_array = [0] * 20     #array containing last 10 magnetometer readings in z-axis
-               direction = SOUTH
-               print 'going straight in direction:'
-               print direction
-               state = STRAIGHT
-         elif direction == EAST:
-            for j in range(10):
-               if y_mag_array[j] > 0:
-                  count -= 1
-            if count == -10:
-             
-            #new = mag_array[len(mag_array)/2:]
-            #old = mag_array[:len(mag_array)/2]
-            #if sum(new)/len(new) > sum(old)/len(old):
-               #del mag_array[:]
-               #mag_array = [0] * 20     #array containing last 10 magnetometer readings in z-axis
-               direction = NORTH
-               print 'going straight in direction:'
-               print direction
-               state = STRAIGHT   
-      elif state == LANDING:
-         if dict['agl'] < 10:
-            servo_l.set_angle(2160)
-            servo_r.set_angle(2160)
-         #print "landing bitches"      
-      #no gps fix, so do something simple
-      #want to stop as soon as the gps has a fix though
-      #pass
-      #navigate based on destination gps
-      pass
+                    
+                  servo_r.set_angle(r_angle)
+                  servo_l.set_angle(l_angle)
+            state = TURN
+            print 'Done going straight. now turning'
+         elif state == TURN:
+            servo_l.set_angle(1180)
+            servo_r.set_angle(1080)
+            z_mag_array, y_mag_array = update_mag_array(z_mag_array, y_mag_array, x_mag_array)
+            count = 0
+            if direction == SOUTH:
+               for j in range(10):
+                  if z_mag_array[j] < 0:
+                     count -= 1
+               if count == -10:
+                  direction = EAST
+                  print 'going straight in direction:'
+                  print direction
+                  state = STRAIGHT
+            elif direction == NORTH:
+               for j in range(10):
+                  if z_mag_array[j] > 0:
+                     count += 1
+               if count == 10:
+                  direction = WEST
+                  print 'going straight in direction:'
+                  print direction
+                  state = STRAIGHT
+            elif direction == WEST:
+               for j in range(10):
+                  if y_mag_array[j] < 0:
+                     count += 1
+               if count == 10:
+                
+               #new = mag_array[len(mag_array)/2:]
+               #old = mag_array[:len(mag_array)/2]
+               #if sum(new)/len(new) < sum(old)/len(old):
+                  #del mag_array[:]
+                  #mag_array = [0] * 20     #array containing last 10 magnetometer readings in z-axis
+                  direction = SOUTH
+                  print 'going straight in direction:'
+                  print direction
+                  state = STRAIGHT
+            elif direction == EAST:
+               for j in range(10):
+                  if y_mag_array[j] > 0:
+                     count -= 1
+               if count == -10:
+                
+               #new = mag_array[len(mag_array)/2:]
+               #old = mag_array[:len(mag_array)/2]
+               #if sum(new)/len(new) > sum(old)/len(old):
+                  #del mag_array[:]
+                  #mag_array = [0] * 20     #array containing last 10 magnetometer readings in z-axis
+                  direction = NORTH
+                  print 'going straight in direction:'
+                  print direction
+                  state = STRAIGHT   
+         elif state == LANDING:
+            if dict['agl'] < 15:
+               servo_l.set_angle(2160)
+               servo_r.set_angle(2160)
+            #print "landing bitches"      
+         #no gps fix, so do something simple
+         #want to stop as soon as the gps has a fix though
+         #pass
+         #navigate based on destination gps
+         pass
 
 def update_mag_array(z_mag_array, y_mag_array, x_mag_array):
  #Fresh data
