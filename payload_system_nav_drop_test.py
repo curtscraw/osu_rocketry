@@ -24,8 +24,10 @@ SERVO_PIN_R = "P9_14"
 TRX_DEVICE = "/dev/ttyO1"
 #These are the important values to change for every flight!!
 POWER_ON_ALT = 79   #altitude in meters of power on
-CHUTE_DEPLOY = 600  #altitude to deploy main chute at
-MIN_ALT	     = 900  #target minimum altitude before coming back down
+#CHUTE_DEPLOY = 600  #altitude to deploy main chute at
+#MIN_ALT	     = 900  #target minimum altitude before coming back down
+CHUTE_DEPLOY = 200  #altitude to deploy main chute at
+MIN_ALT	     = 100  #target minimum altitude before coming back down
 DEST_LAT     = 44.5739
 DEST_LONG    = -123.279277
 
@@ -34,8 +36,6 @@ ERROR_LOG = '/home/osu_rocketry/payload_error.log'
 DATA_LOG = '/home/osu_rocketry/payload_data.log'
 GPS_LOG = '/home/osu_rocketry/payload_gps.log'
 
-DEST_LAT = 0
-DEST_LONG = 0
 
 #states for nav
 FIND_NORTH = 0
@@ -180,29 +180,43 @@ def nav_th():
    dict['direction'] = direction
    dict['state'] = state
    old_long = 0
+   long_legs_left = 4
+   lat_legs_left = 4
+   go = NONE
    #navigate based on dict: gps_fix, lat, long
    #navigate based on report: gps_report 
    while True:
-      if dict['gps_fix'] == 1 and old_long != dict["long"]:
-         if old_long == 0:
-            origin_angle = math.degrees(math.atan2((dict["long"]-DEST_LONG),(dict["lat"]-DEST_LAT)))
-            print origin_angle
-         else:
-            print "GPS UPDATED"
-            print dict["long"]
-            print dict["lat"]
-            long_dif = dict["long"] - old_long
-            lat_dif = dict["lat"] - old_lat
-            new_angle = math.degrees(math.atan2((dict["long"]-DEST_LONG),(dict["lat"]-DEST_LAT)))
-            #right turn
-               if ((new angle >= 0) and (new_angle > origin_angle or new angle < (180 - origin_angle))) or ((new_angle < 0) and (new_angle > origin_angle or new_angle < (-180 + origin_angle)): 
-                  print "Right Turn"
-               else:
-                  print "Left Turn"
+      if dict['gps_fix'] == 1: 
+         if old_long != dict["long"]:
+            if old_long == 0:
+               origin_point = [dict["long"],dict["lat"]]
+               leg_lat = origin_point[2] - DEST_LAT
+               leg_long = origin_point[1] - DEST_LONG
+               print origin_angle
+               if leg_lat > 0:
+                  go = SOUTH
+               else 
+                  go = NORTH
+            else:
+               old_long = dict["long"]
+               old_lat = dict["lat"]
          
+         if go == SOUTH:
+            #keep south
+         elif go == NORTH:
+            #Keep north
+         elif go == EAST:
+         
+         else:
+            #west
+         
+         if dict["lat"] <= leg_lat*lat_legs_left/4:
+            lat_legs_left -= 1;
+            #switch to east or west
+         if dict["long"] <= leg_lat*lat_legs_left/4:
+            long_legs_left -= 1;
+            #switch to north or south
 
-         old_long = dict["long"]
-         old_lat = dict["lat"]
            
 
       elif 0:
@@ -413,7 +427,7 @@ def poll_th():
   #for servo testing
   #remove this part after testing
   #TODO
-  start_new_thread(nav_th, ())
+  #start_new_thread(nav_th, ())
   
   while True:
     try:
@@ -462,7 +476,7 @@ def poll_th():
   
         alt = BMP180.BMP180(last_measure)
         accel = LSM9DS0.LSM9DS0_ACCEL()
-        gyro = LSM9DS0.LSM9DS0_GYRO(LSM9DS0.LSM9DS0_GYRODR_95HZ | LSM9DS0.LSM9DS0_GYRO_CUTOFF_1, LSM9DS0.LSM9DS0_GYROSCALE_2000DPS)
+        gyro = LSM9DS0.LSM9DS0_GYRO()
       except:
         logging.exception('Gotexception on recovery attempt')
   
