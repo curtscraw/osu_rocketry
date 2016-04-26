@@ -199,7 +199,7 @@ def nav_th():
             count = 0
             #Use the last 10 datapoints to guaruntee we are north or south facing
             for j in range(10):
-                if z_mag_array[j] > 0:
+               if z_mag_array[j] > 0:
                   count += 1
                if z_mag_array[j] < 0:
                   count -= 1
