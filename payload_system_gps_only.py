@@ -28,8 +28,8 @@ POWER_ON_ALT = 79   #altitude in meters of power on
 #MIN_ALT	     = 900  #target minimum altitude before coming back down
 CHUTE_DEPLOY = 100  #altitude to deploy main chute at
 MIN_ALT	     = 200  #target minimum altitude before coming back down
-DEST_LAT     = 44.5739
-DEST_LONG    = -123.279277
+DEST_LAT     = 44.574177
+DEST_LONG    = -123.28021
 
 
 ERROR_LOG = '/home/osu_rocketry/payload_error.log'
@@ -40,8 +40,11 @@ GPS_LOG = '/home/osu_rocketry/payload_gps.log'
 #states for nav
 ORIENT = 0
 STRAIGHT = 1
-TURN = 2
-LANDING = 3
+TURNLEFT = 2
+TURNRIGHT = 3
+TURNAROUND = 4
+LANDING = 5
+WAIT = 6
 
 NORTH = 0
 WEST = 1
@@ -164,167 +167,158 @@ def nav_th():
    #servo_r = TGY6114MD.TGY6114MD_SERVO(SERVO_PIN_R)
    #servo_l = TGY6114MD.TGY6114MD_SERVO(SERVO_PIN_L)
    #state and direction variables
-   state = OREINT
-   print state
-   direction = NONE
+   state = ORIENT
    #servo angle set to midde
    r_angle = 1080
    l_angle = 1080
+   turn_init = 0
    #holds last 20 gps hits
    lat_array = []
    long_array = []
    long_dir = NONE
    lat_dir = NONE
+   go_lat = 0
+   go_long = 0
    for i in range(20):
-      lat_array.append = 0
-      long_array.append = 0
+      lat_array.append(0)
+      long_array.append(0)
    print 'starting nav'
-   dict['direction'] = direction
+   #dict['direction'] = direction
    dict['state'] = state
-   if dict['gps_fix'] == 1:
-   #navigate based on dict: gps_fix, lat, long
-   #navigate based on report: gps_report
-      if dict['lat'] > DEST_LAT:
-         go = NORTH
-      else:
-         go = SOUTH
-         
-      while True:
-         #GPS UPDATING
-        #if dict['agl'] < 30:
-           # state = LANDING
-           # l_angle = 1080
-           # r_angle = 1080
-         sleep(1)
-         if lat_array != dict['lat'] or long_array != dict['long']:
-            for i in range(19):
-               lat_array[i+1] =lat_array[i]
-               long_array[i+1] =long_array[i]
-            lat_array[0] = dict['lat']
-            long_array[0] = dict['long']
-            sum_lat = 0
-            sum_long = 0
-            sum_lat2 = 0
-            sum_long2 = 0
-            for i in range(10):
-               sum_lat += lat_array[i]
-               sum_long += long_array[i]
-               sum_lat2 += lat_array[i+10]
-               sum_long2 += long_array[i+10]
-            if sum_lat <= sum_lat2 and sum_long <= sum_long2:
-               lat_dir = SOUTH
-               long_dir = WEST
-            elif sum_lat >= sum_lat2 and sum_long >= sum_long2:
-               lat_dir = NORTH
-               long_dir = EAST
-            elif sum_lat > sum_lat2 and sum_long < sum_long2:
-               lat_dir = NORTH
-               long_dir = WEST
-            elif sum_lat < sum_lat2 and sum_long > sum_long2:
-               lat_dir = SOUTH
-               long_dir = EAST
-            
-            
-            if state == ORIENT:
-               if lat_array[19] != 0:
-                  if lat_dir == go:
-                     state = STRAIGHT
-                     long_hold = long_array[0]
-                     print "going straight"
-                     print go
-                  else:
-                     state = TURNAROUND
-                     print "Turnaround"
-                     
-            elif state == STRAIGHT:
-               if go == NORTH:
-                  if long_hold < long_array[0]:
-                     print "left"
-                     l_angle += 5
-                     r_angle -= 5
-                  else:
-                     print "right"
-                     l_angle -= 5
-                     r_angle += 5
-               if go == SOUTH:
-                  if long_hold > long_array[0]:
-                     print "left"
-                     l_angle += 5
-                     r_angle -= 5
-                  else:
-                     print "right"
-                     l_angle -= 5
-                     r_angle += 5
-                     
-               if go == EAST:
-                  if lat_hold > lat_array[0]:
-                     print "left"
-                     l_angle += 5
-                     r_angle -= 5
-                  else:
-                     print "right"
-                     l_angle -= 5
-                     r_angle += 5
-               if go == WEST:
-                  if lat_hold < lat_array[0]:
-                     print "left"
-                     l_angle += 5
-                     r_angle -= 5
-                  else:
-                     print "right"
-                     l_angle -= 5
-                     r_angle += 5
-               if (go == NORTH or go == SOUTH) and abs(DEST_LAT - array_lat[0]) < .0001:
-                  state = STRAIGHT
-                  
-                  if DEST_LONG - array_lat[0] > 0:
-                     print "Time to go west"
-                     go = WEST
-                     hold_lat = DEST_LAT
-                  else:
-                     print "Time to go east"
-                     go = EAST
-                     hold_lat = DEST_LAT
-               elif (go == EAST or go == WEST) and abs(DEST_LONG - array_long[0]) < .0001:
-                  #SHOULD BE DONE...?
-                  state = HOLDTURN
-                  print "DONE...Hold turn"
-                     
-            elif state == TURNAROUND:
-               if (go == NORTH and long_dir == EAST) or (go == SOUTH and long_dir == WEST):
-                  r_angle = 1180
-                  l_angle = 1080
-                  print "right turn turnaround"
+   while True:
+      if dict['gps_fix'] == 1:
+         print "We have a fix!"     
+         while True:
+            #GPS UPDATING
+           #if dict['agl'] < 30:
+              # state = LANDING
+              # l_angle = 1080
+              # r_angle = 1080
+            if lat_array != dict['lat'] or long_array != dict['long']:
+               for i in range(19):
+                  lat_array[i+1] =lat_array[i]
+                  long_array[i+1] =long_array[i]
+               lat_array[0] = dict['lat']
+               long_array[0] = dict['long']
+               sum_lat = 0
+               sum_long = 0
+               sum_lat2 = 0
+               sum_long2 = 0
+               for i in range(10):
+                  sum_lat += lat_array[i]
+                  sum_long += long_array[i]
+                  sum_lat2 += lat_array[i+10]
+                  sum_long2 += long_array[i+10]
+               if sum_lat <= sum_lat2 and sum_long <= sum_long2:
+                  lat_dir = SOUTH
+                  long_dir = WEST
+               elif sum_lat >= sum_lat2 and sum_long >= sum_long2:
+                  lat_dir = NORTH
+                  long_dir = EAST
+               elif sum_lat > sum_lat2 and sum_long < sum_long2:
+                  lat_dir = NORTH
+                  long_dir = WEST
+               elif sum_lat < sum_lat2 and sum_long > sum_long2:
+                  lat_dir = SOUTH
+                  long_dir = EAST
+               if lat_array[0] > DEST_LAT:
+                  go_lat = SOUTH
                else:
-                  l_angle = 1180
+                  go_lat = NORTH
+               if long_array[0] > DEST_LONG:
+                  go_long = WEST
+               else:
+                  go_long = EAST
+               if lat_array[19] != [0] and state == WAIT:
+                 state = ORIENT
+               if state == ORIENT:
+                  if go_lat == lat_dir and go_long == long_dir:
+                     state == STRAIGHT
+                     print "Straight!"
+                  elif go_lat != lat_dir and go_long != long_dir:
+                     state = TURNAROUND
+                     print "Turn around"
+                  elif(lat_dir == NORTH and long_dir == WEST and go_lat == NORTH and go_long == EAST) or (lat_dir == SOUTH and long_dir == WEST and go_lat == NORTH and go_long == WEST) or (lat_dir == SOUTH and long_dir == EAST and go_lat == SOUTH and go_long == WEST) or (lat_dir == NORTH and long_dir == EAST and go_lat == SOUTH and go_long == EAST):
+                     state = TURNRIGHT
+                     print "right"
+                     cur_lat = lat_dir
+                     cur_long = long_dir
+                  else:
+                     state = TURNLEFT
+                     print "left"
+                     cur_long = long_dir
+                     cur_lat = lat_dir
+
+                  
+               elif state == STRAIGHT:
                   r_angle = 1080
-                  print "left turn turnaround"
-               if go == lat_dir:
-                  state = STRAIGHT
-                  print "going straight from turnaround..."
-                  print go
-                  hold_long = long_array[0]
-                  
-         
-            elif state == HOLDTURN:
-               r_angle = 1080
-               l_angle = 1180
-            elif state == LANDING:
-               if dict['agl'] < 15:
-                  servo_l.set_angle(2160)
-                  servo_r.set_angle(2160)
-                  
-            if r_angle > 1260:
-                  r_angle = 1260
-            if l_angle > 1260:
-              l_angle = 1260
-            if r_angle < 1080:
-               r_angle = 1080
-            if l_angle < 1080:
-               l_angle = 1080
-            #servo_l.set_angle(l_angle)
-            #servo_r.set_angle(r_angle)
-                  
+                  l_angle = 1080
+                  if lat_dir != go_lat or long_dir != go_long:
+                     state = ORIENT
+                     print "orient"
+
+               elif state == TURNLEFT:
+                  if turn_init == 0:
+                     turn_init = 1
+                     l_angle = 1170
+                     r_angle = 1080
+                     end = time.time() + 5
+                  if time.time() > end:
+                     end = time.time() + 5
+                     l_angle += 15
+                     print "more left"
+                  if (cur_lat != lat_dir or cur_long != long_dir) and (lat_dir != go_lat and long_dir != go_long):
+                     state = ORIENT
+                     turn_init = 0
+
+               elif state == TURNRIGHT:
+                  if turn_init == 0:
+                     turn_init = 1
+                     r_angle = 1170
+                     l_angle = 1080
+                     end = time.time() + 5
+                  if time.time() > end:
+                     end = time.time() + 5
+                     r_angle += 15
+                     print "MORE RIGHT"
+                  if (cur_lat != lat_dir or cur_long != long_dir) and (lat_dir != go_lat and long_dir != go_long):
+                     state = ORIENT
+                     turn_init = 0
+
+
+               elif state == TURNAROUND:
+                  if turn_init == 0:
+                     turn_init = 1
+                     r_angle = 1180
+                     l_angle = 1080
+                     end = time.time() + 5
+                  if time.time() > end:
+                     end = time.time() + 5
+                     r_angle += 20
+                     print "turn around faster"
+                  if lat_dir == go_lat or long_dir == go_long:
+                     state = ORIENT
+                     turn_init = 0
+
+
+                 
+                        
+               elif state == LANDING:
+                  if dict['agl'] < 15:
+                     servo_l.set_angle(2160)
+                     servo_r.set_angle(2160)
+                     
+               if r_angle > 1260:
+                     r_angle = 1260
+               if l_angle > 1260:
+                 l_angle = 1260
+               if r_angle < 1080:
+                  r_angle = 1080
+               if l_angle < 1080:
+                  l_angle = 1080
+               #servo_l.set_angle(l_angle)
+               #servo_r.set_angle(r_angle)
+                     
 
 
 def log_th():
@@ -357,7 +351,7 @@ def poll_th():
   #for servo testing
   #remove this part after testing
   #TODO
-  #start_new_thread(nav_th, ())
+  start_new_thread(nav_th, ())
   
   while True:
     try:
