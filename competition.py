@@ -16,6 +16,9 @@ from thread import start_new_thread, allocate_lock
 
 import logging
 
+#DETERMINES if payload or nosecone
+PAYLOAD = 1
+
 #general needed values
 X_MAG_ARR_LEN = 120
 CUTTER_PIN = "P9_12"
@@ -361,21 +364,20 @@ def poll_th():
   while True:
     try:
       dict['time'] = datetime.datetime.utcnow()
-      temp_agl = alt.read_agl()
-      if abs(dict['agl'] - last_measure) < 60:
-         dict['agl'] = round(temp_agl, 2)
+      dict['agl'] = round(alt.read_agl(), 2)
       dict['temp'] = alt.read_temperature()
       
       #act on altimeter, in case accel fails in some way
-      if (dict['agl'] > MIN_ALT) and (last_measure > MIN_ALT) and (not dict['arm_cut']):
-        dict['arm_cut'] = 1
-        f_log.write("armed cutter\n")
-  
-      if dict['arm_cut'] and (not dict['start_cut']):
-        if dict['agl'] <= CHUTE_DEPLOY and last_measure <= CHUTE_DEPLOY:
-          dict['start_cut'] = 1
-	  start_new_thread(nav_th, ())
-  
+      if PAYLOAD == 1:
+         if (dict['agl'] > MIN_ALT) and (last_measure > MIN_ALT) and (not dict['arm_cut']):
+           dict['arm_cut'] = 1
+           f_log.write("armed cutter\n")
+         #WE NEED FILTERING HERE
+         if dict['arm_cut'] and (not dict['start_cut']):
+           if dict['agl'] <= CHUTE_DEPLOY and last_measure <= CHUTE_DEPLOY:
+             dict['start_cut'] = 1
+             start_new_thread(nav_th, ())
+     
       last_measure = temp_agl
       
       (x, y, z) = accel.read_accel()
