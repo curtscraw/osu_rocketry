@@ -351,7 +351,8 @@ def poll_th():
   f_log = open(DATA_LOG, 'a')
   f_log.write("starting log\n")
   
-  last_measure = POWER_ON_ALT
+  agl_arr = [0] * 10
+  i = 0
   
   #sensor are up, start the xbee and gps threads
   start_new_thread(xbee_th, ())
@@ -369,18 +370,21 @@ def poll_th():
       dict['temp'] = alt.read_temperature()
       
       #act on altimeter, in case accel fails in some way
+      agl_arr[i] = dict['agl']
+      agl_avg = sum(agl_arr)/10
+      i++
+      if i == 10:
+        i = 0
+
       if PAYLOAD == 1:
-         if (dict['agl'] > MIN_ALT) and (last_measure > MIN_ALT) and (not dict['arm_cut']):
+         if (agl_avg > MIN_ALT) and (not dict['arm_cut']):
            dict['arm_cut'] = 1
            f_log.write("armed cutter\n")
-         #WE NEED FILTERING HERE
          if dict['arm_cut'] and (not dict['start_cut']):
-           if dict['agl'] <= CHUTE_DEPLOY and last_measure <= CHUTE_DEPLOY:
+           if agl_avg <= CHUTE_DEPLOY:
              dict['start_cut'] = 1
              start_new_thread(nav_th, ())
      
-      last_measure = temp_agl
-      
       (x, y, z) = accel.read_accel()
       dict['a_x'] = round(x, 5)
       dict['a_y'] = round(y, 5)
