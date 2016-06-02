@@ -67,7 +67,7 @@ GPIO.output(CUTTER_PIN, GPIO.LOW)
 
 #Sorry Curtis
 #I cant think of a more elegant way to add this flag
-dict = {'time': 0, 'agl': 0, 'temp': 0, 'a_x': 0, 'a_y': 0, 'a_z': 0, 'g_x': 0, 'g_y': 0, 'g_z': 0, 'gps_fix': 0, 'lat': 0, 'long': 0, 'arm_cut': 0, 'start_cut': 0, 'xbee_errors': 0, 'm_x': 0, 'm_y': 0, 'm_z': 0, 'new_dat_flag': 0, 'state': 0}
+dict = {'time': 0, 'agl': 0, 'temp': 0, 'a_x': 0, 'a_y': 0, 'a_z': 0, 'g_x': 0, 'g_y': 0, 'g_z': 0, 'gps_fix': 0, 'lat': 0, 'long': 0, 'arm_cut': 0, 'start_cut': 0, 'xbee_errors': 0, 'm_x': 0, 'm_y': 0, 'm_z': 0, 'new_dat_flag': 0, 'state': 0, 'track': 0}
 
 error_trace = {'error': ' '}
 
@@ -147,6 +147,8 @@ def gps_th():
 
       dict['lat'] = session.fix.latitude
       dict['long'] = session.fix.longitude
+      dict['track'] = session.fix.track
+      dict['speed'] = session.fix.speed
       dict['gps_time']  = session.fix.time
       log.write(str(gps_report) + "\n")
     else:
@@ -343,7 +345,6 @@ def poll_th():
   #data polling thread is main thread
   #setup gyro and altimeter
   alt = BMP180.BMP180(POWER_ON_ALT)
-  #motion = LSM9DS0.LSM9DS0()
   gyro = LSM9DS0.LSM9DS0_GYRO(LSM9DS0.LSM9DS0_GYRODR_95HZ | LSM9DS0.LSM9DS0_GYRO_CUTOFF_1, LSM9DS0.LSM9DS0_GYROSCALE_2000DPS)
   accel = LSM9DS0.LSM9DS0_ACCEL()
   
