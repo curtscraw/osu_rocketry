@@ -39,13 +39,10 @@ GPS_LOG = '/home/osu_rocketry/payload_gps.log'
 
 
 #states for nav
-ORIENT = 0
 STRAIGHT = 1
 TURNLEFT = 2
 TURNRIGHT = 3
-TURNAROUND = 4
-LANDING = 5
-WAIT = 6
+LANDING = 4
 
 NORTH = 0
 WEST = 1
@@ -174,14 +171,7 @@ def nav_th():
    #servo angle set to midde
    r_angle = 1080
    l_angle = 1080
-   turn_init = 0
    #holds last 20 gps hits
-   lat_array = []
-   long_array = []
-   long_dir = NONE
-   lat_dir = NONE
-   go_lat = 0
-   go_long = 0
    left_flag = 0
    right_flag = 0
    for i in range(40):
