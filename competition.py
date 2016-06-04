@@ -194,79 +194,81 @@ def nav_th():
             long_sub = dict['long']-DEST_LONG
             lat_sub = dict['lat']-DEST_LAT
             angle_to_dest = math.tan(lat_sub/long_sub)
+            if (state != LANDING)
+               #QUAD 1
+               if(lat_sub > 0 and long_sub > 0):
+                  if(dict['track'] < angle_to_dest or dict['track'] > (angle_to_dest + 180)):
+                     state = TURNLEFT
+                  else:
+                     state = TURNRIGHT
+               #QUAD 2
+               elif(lat_sub < 0 and long_sub > 0):
+                  if(dict['track'] < (180 - angle_to_dest) or dict['track'] > (360 - angle_to_dest)):
+                     state = TURNRIGHT
+                  else:
+                     state = TURNLEFT
 
-            #QUAD 1
-            if(lat_sub > 0 and long_sub > 0):
-               if(dict['track'] < angle_to_dest or dict['track'] > (angle_to_dest + 180)):
-                  state = TURNLEFT
-               else:
-                  state = TURNRIGHT
-            #QUAD 2
-            elif(lat_sub < 0 and long_sub > 0):
-               if(dict['track'] < (180 - angle_to_dest) or dict['track'] > (360 - angle_to_dest)):
-                  state = TURNRIGHT
-               else:
-                  state = TURNLEFT
+               #QUAD 3
+               elif(lat_sub < 0 and long_sub < 0):
+                  if(dict['track'] < angle_to_dest or dict['track'] > (angle_to_dest + 180)):
+                     state = TURNRIGHT
+                  else:
+                     state = TURNLEFT
 
-            #QUAD 3
-            elif(lat_sub < 0 and long_sub < 0):
-               if(dict['track'] < angle_to_dest or dict['track'] > (angle_to_dest + 180)):
-                  state = TURNRIGHT
-               else:
-                  state = TURNLEFT
+               #QUAD 4
+               elif(lat_sub > 0 and long_sub < 0):
+                  if(dict['track'] < (180 - angle_to_dest) or dict['track'] > (360 - angle_to_dest)):
+                     state = TURNLEFT
+                  else:
+                     state = TURNRIGHT
 
-            #QUAD 4
-            elif(lat_sub > 0 and long_sub < 0):
-               if(dict['track'] < (180 - angle_to_dest) or dict['track'] > (360 - angle_to_dest)):
-                  state = TURNLEFT
-               else:
-                  state = TURNRIGHT
+            if state == TURNLEFT:
+               if left_flag == 0:
+                  right_flag = 0
+                  left_flag = 1
+                  l_angle += 30
+                  r_angle -= 30
+                  end = time.time() + 2
+               if time.time() > end:
+                  end = time.time() + 2
+                  l_angle += 30
+                  r_angle -= 30
+                  #print "more left"
+               
 
-               if state == TURNLEFT:
-                  if left_flag == 0:
-                     right_flag = 0
-                     left_flag = 1
-                     l_angle = 1170
-                     r_angle = 1080
-                     end = time.time() + 2
-                  if time.time() > end:
-                     end = time.time() + 2
-                     l_angle += 15
-                     #print "more left"
+            elif state == TURNRIGHT:
+               if right_flag == 0:
+                  right_flag = 1
+                  left_flag = 0
+                  r_angle += 30
+                  l_angle -= 30
+                  end = time.time() + 2
+               if time.time() > end:
+                  end = time.time() + 2
+                  r_angle += 30
+                  l_angle -= 30
+                  #print "MORE RIGHT"
                   
-
-               elif state == TURNRIGHT:
-                  if right_flag == 0:
-                     right_flag = 1
-                     left_flag = 0
-                     r_angle = 1170
-                     l_angle = 1080
-                     end = time.time() + 2
-                  if time.time() > end:
-                     end = time.time() + 2
-                     r_angle += 15
-                     #print "MORE RIGHT"
+            elif state == STRAIGHT:
+               r_angle = 1080
+               l_angle = 1080
                      
-               elif state == STRAIGHT:
-                  r_angle = 1080
-                  l_angle = 1080
-                        
-               elif state == LANDING:
-                  if dict['agl'] < 15:
-                     servo_l.set_angle(2160)
-                     servo_r.set_angle(2160)
-                     
-               if r_angle > 1260:
-                     r_angle = 1260
-               if l_angle > 1260:
-                 l_angle = 1260
-               if r_angle < 1080:
-                  r_angle = 1080
-               if l_angle < 1080:
-                  l_angle = 1080
-               servo_l.set_angle(l_angle)
-               servo_r.set_angle(r_angle)
-                     
+            elif state == LANDING:
+               if dict['agl'] < 15:
+                  servo_l.set_angle(2160)
+                  servo_r.set_angle(2160)
+                  
+            if r_angle > 1260:
+                  r_angle = 1260
+            if l_angle > 1260:
+              l_angle = 1260
+            if r_angle < 1080:
+               r_angle = 1080
+            if l_angle < 1080:
+               l_angle = 1080
+            servo_l.set_angle(l_angle)
+            servo_r.set_angle(r_angle)
+                  
 
 
 #def log_th():
