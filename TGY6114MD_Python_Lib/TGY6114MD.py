@@ -23,7 +23,7 @@ class TGY6114MD_SERVO:
         if (self._pin_set == True):
             self.set_angle()
 
-    def _confiig_servo(self, pin):
+    def _config_servo(self, pin):
         #detirmine side of servo
         if (pin != -1):
             self._pin = pin
