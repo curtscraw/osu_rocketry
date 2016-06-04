@@ -5,7 +5,7 @@ from Adafruit_I2C import Adafruit_I2C
 from time import sleep
 import datetime
 import math
-import Adafruit_BMP.BMP085 as BMP085
+#import Adafruit_BMP.BMP085 as BMP085
 
 CTRL_REG1_XM = 0x20
 CTRL_REG2_XM = 0x21
@@ -14,16 +14,16 @@ WHO_AM_I_XM  = 0x0F
 LSB_VAL = 0.732
 
 accel = Adafruit_I2C(0x1D)
-sensor = BMP085.BMP085()
+#sensor = BMP085.BMP085()
 
 INIT_ALT = 72
-Po = sensor.read_sealevel_pressure(INIT_ALT) 	#must calibrate using a known itial state
+#Po = sensor.read_sealevel_pressure(INIT_ALT) 	#must calibrate using a known itial state
 
 #our altimeter function
-def osu_aiaa_alt(s):
-	alt = s.read_altitude(Po)
-	alt -= INIT_ALT
-	return alt
+#def osu_aiaa_alt(s):
+#	alt = s.read_altitude(Po)
+#	alt -= INIT_ALT
+#	return alt
 
 accel_in = accel.readU8(WHO_AM_I_XM);
 if not (accel_in == 0x49):

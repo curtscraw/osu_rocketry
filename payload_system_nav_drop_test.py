@@ -26,8 +26,8 @@ TRX_DEVICE = "/dev/ttyO1"
 POWER_ON_ALT = 79   #altitude in meters of power on
 #CHUTE_DEPLOY = 600  #altitude to deploy main chute at
 #MIN_ALT	     = 900  #target minimum altitude before coming back down
-CHUTE_DEPLOY = 200  #altitude to deploy main chute at
-MIN_ALT	     = 100  #target minimum altitude before coming back down
+CHUTE_DEPLOY = 100  #altitude to deploy main chute at
+MIN_ALT	     = 200  #target minimum altitude before coming back down
 DEST_LAT     = 44.5739
 DEST_LONG    = -123.279277
 
@@ -180,13 +180,14 @@ def nav_th():
    dict['direction'] = direction
    dict['state'] = state
    old_long = 0
-   long_legs_left = 4
+   long_legs_l = 4
    lat_legs_left = 4
    go = NONE
    #navigate based on dict: gps_fix, lat, long
    #navigate based on report: gps_report 
    while True:
       if dict['gps_fix'] == 1: 
+         #Initialize based on first coordinate recieved
          if old_long != dict["long"]:
             if old_long == 0:
                origin_point = [dict["long"],dict["lat"]]
@@ -195,29 +196,67 @@ def nav_th():
                print origin_angle
                if leg_lat > 0:
                   go = SOUTH
-               else 
+               else: 
                   go = NORTH
+            #update old values
             else:
                old_long = dict["long"]
                old_lat = dict["lat"]
-         
-         if go == SOUTH:
-            #keep south
-         elif go == NORTH:
-            #Keep north
+         #maintain course
+         if go == NORTH: 
+            if y_mag_array[9] < 0:
+               l_angle += 5
+               r_angle -= 5
+            else:
+               r_angle += 5
+               l_angle -= 5
+               
+         elif go == SOUTH:
+            if y_mag_array[9] > 0:
+               l_angle += 5
+               r_angle -= 5
+            else:
+               r_angle += 5
+               l_angle -= 5
          elif go == EAST:
-         
-         else:
-            #west
-         
-         if dict["lat"] <= leg_lat*lat_legs_left/4:
+            if z_mag_array[9] < 0:
+               r_angle -= 5
+               l_angle += 5
+            else:
+               l_angle -= 5
+               r_angle += 5
+         elif go == WEST:
+            if z_mag_array[9] > 0:
+               r_angle += 5
+               l_angle -= 5
+            else:
+               l_angle += 5
+               r_angle -= 5
+         #180 and middle are the max and min values      
+         if r_angle > 1260:
+           r_angle = 1260
+         if l_angle > 1260:
+           l_angle = 1260
+         if r_angle < 1080:
+            r_angle = 1080
+         if l_angle < 1080:
+            l_angle = 1080
+         #switch the leg you're on          
+         if abs(dict["lat"] - DEST_LAT) <= leg_lat*lat_legs_left/4:
             lat_legs_left -= 1;
-            #switch to east or west
-         if dict["long"] <= leg_lat*lat_legs_left/4:
-            long_legs_left -= 1;
-            #switch to north or south
+            if leg_long > 0:
+               go = EAST
+            else:
+               go = WEST
 
-           
+         if abs(dict["long"] - DEST_LONG) <= leg_lat*lat_legs_left/4:
+            long_legs_left -= 1;
+            if leg_lat > 0:
+               go = SOUTH
+            else:
+               go = NORTH
+
+         #When you're at the point
 
       elif 0:
          if dict['agl'] < 30:
@@ -432,7 +471,9 @@ def poll_th():
   while True:
     try:
       dict['time'] = datetime.datetime.utcnow()
-      dict['agl'] = alt.read_agl()
+      temp_agl = alt.read_agl()
+      if abs(dict['agl'] - last_measure) < 60:
+         dict['agl'] = temp_agl
       dict['temp'] = alt.read_temperature()
       
       #act on altimeter, in case accel fails in some way
@@ -445,7 +486,7 @@ def poll_th():
           dict['start_cut'] = 1
 	  start_new_thread(nav_th, ())
   
-      last_measure = dict['agl']
+      last_measure = temp_agl
       
       (x, y, z) = accel.read_accel()
       dict['a_x'] = x
@@ -469,7 +510,7 @@ def poll_th():
       try:
         logging.exception('Got I2C exception on main handler' + str(dict['time']))
         
-        err_lock.aqcuire()
+        err_lock.acquire()
         dict['xbee_errors'] += 1
         error_trace['error'] += e + '\n'
         err_lock.release()

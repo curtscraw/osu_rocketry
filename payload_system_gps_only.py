@@ -23,13 +23,11 @@ SERVO_PIN_L = "P8_13"
 SERVO_PIN_R = "P9_14"
 TRX_DEVICE = "/dev/ttyO1"
 #These are the important values to change for every flight!!
-POWER_ON_ALT = 79   #altitude in meters of power on
-#CHUTE_DEPLOY = 600  #altitude to deploy main chute at
-#MIN_ALT	     = 900  #target minimum altitude before coming back down
-CHUTE_DEPLOY = 100  #altitude to deploy main chute at
-MIN_ALT	     = 200  #target minimum altitude before coming back down
-DEST_LAT     = 44.574177
-DEST_LONG    = -123.28021
+POWER_ON_ALT = 1414   #altitude in meters of power on
+CHUTE_DEPLOY = 1350  #altitude to deploy main chute at
+MIN_ALT	     = 2100  #target minimum altitude before coming back down
+DEST_LAT     = 43.79558
+DEST_LONG    = -120.6501
 
 
 ERROR_LOG = '/home/osu_rocketry/payload_error.log'
@@ -66,7 +64,7 @@ GPIO.output(CUTTER_PIN, GPIO.LOW)
 
 #Sorry Curtis
 #I cant think of a more elegant way to add this flag
-dict = {'time': 0, 'agl': 0, 'temp': 0, 'a_x': 0, 'a_y': 0, 'a_z': 0, 'g_x': 0, 'g_y': 0, 'g_z': 0, 'gps_fix': 0, 'lat': 0, 'long': 0, 'arm_cut': 0, 'start_cut': 0, 'xbee_errors': 0, 'm_x': 0, 'm_y': 0, 'm_z': 0, 'new_dat_flag': 0, 'direction': 0, 'state': 0}
+dict = {'time': 0, 'agl': 0, 'temp': 0, 'a_x': 0, 'a_y': 0, 'a_z': 0, 'g_x': 0, 'g_y': 0, 'g_z': 0, 'gps_fix': 0, 'lat': 0, 'long': 0, 'arm_cut': 0, 'start_cut': 0, 'xbee_errors': 0, 'm_x': 0, 'm_y': 0, 'm_z': 0, 'new_dat_flag': 0, 'state': 0}
 
 error_trace = {'error': ' '}
 
@@ -156,16 +154,16 @@ def gps_th():
   
 def nav_th():
    #activate the cutter
-   #GPIO.output(CUTTER_PIN, GPIO.HIGH)
-   #sleep(1) 
-   #GPIO.output(CUTTER_PIN, GPIO.LOW)
+   GPIO.output(CUTTER_PIN, GPIO.HIGH)
+   sleep(1) 
+   GPIO.output(CUTTER_PIN, GPIO.LOW)
 
    #wait, and then start navigating the thing!
-   #sleep(2)
+   sleep(2)
 
    #initialize servos
-   #servo_r = TGY6114MD.TGY6114MD_SERVO(SERVO_PIN_R)
-   #servo_l = TGY6114MD.TGY6114MD_SERVO(SERVO_PIN_L)
+   servo_r = TGY6114MD.TGY6114MD_SERVO(SERVO_PIN_R)
+   servo_l = TGY6114MD.TGY6114MD_SERVO(SERVO_PIN_L)
    #state and direction variables
    state = ORIENT
    #servo angle set to midde
@@ -179,23 +177,25 @@ def nav_th():
    lat_dir = NONE
    go_lat = 0
    go_long = 0
-   for i in range(20):
+   for i in range(40):
       lat_array.append(0)
       long_array.append(0)
-   print 'starting nav'
+   #print 'starting nav'
    #dict['direction'] = direction
    dict['state'] = state
    while True:
       if dict['gps_fix'] == 1:
-         print "We have a fix!"     
+         #print "We have a fix!"     
          while True:
             #GPS UPDATING
-           #if dict['agl'] < 30:
-              # state = LANDING
-              # l_angle = 1080
-              # r_angle = 1080
-            if lat_array != dict['lat'] or long_array != dict['long']:
-               for i in range(19):
+            dict['state'] = state
+            if dict['agl'] < 30:
+               state = LANDING
+               l_angle = 1080
+               r_angle = 1080
+            if lat_array[0] != dict['lat'] or long_array[0] != dict['long']:
+               sleep(2)
+               for i in range(39):
                   lat_array[i+1] =lat_array[i]
                   long_array[i+1] =long_array[i]
                lat_array[0] = dict['lat']
@@ -204,23 +204,27 @@ def nav_th():
                sum_long = 0
                sum_lat2 = 0
                sum_long2 = 0
-               for i in range(10):
+               for i in range(20):
                   sum_lat += lat_array[i]
                   sum_long += long_array[i]
                   sum_lat2 += lat_array[i+10]
                   sum_long2 += long_array[i+10]
-               if sum_lat <= sum_lat2 and sum_long <= sum_long2:
+               if lat_array[0] <= lat_array[10] and long_array[0] <= long_array[10]:
                   lat_dir = SOUTH
                   long_dir = WEST
-               elif sum_lat >= sum_lat2 and sum_long >= sum_long2:
+                  #print "southwest"
+               elif lat_array[0] >= lat_array[10] and long_array[0] >= long_array[10]:
                   lat_dir = NORTH
                   long_dir = EAST
-               elif sum_lat > sum_lat2 and sum_long < sum_long2:
+                  #print "northeast"
+               elif lat_array[0] > lat_array[10] and long_array[0] < long_array[10]:
                   lat_dir = NORTH
                   long_dir = WEST
-               elif sum_lat < sum_lat2 and sum_long > sum_long2:
+                  #print "northwest"
+               elif lat_array[0] < lat_array[10] and long_array[0] > long_array[10]:
                   lat_dir = SOUTH
                   long_dir = EAST
+                  #print "southeast"
                if lat_array[0] > DEST_LAT:
                   go_lat = SOUTH
                else:
@@ -229,23 +233,23 @@ def nav_th():
                   go_long = WEST
                else:
                   go_long = EAST
-               if lat_array[19] != [0] and state == WAIT:
+               if lat_array[39] != [0] and state == WAIT:
                  state = ORIENT
                if state == ORIENT:
                   if go_lat == lat_dir and go_long == long_dir:
-                     state == STRAIGHT
-                     print "Straight!"
+                     state = STRAIGHT
+                     #print "Straight!"
                   elif go_lat != lat_dir and go_long != long_dir:
                      state = TURNAROUND
-                     print "Turn around"
+                     #print "Turn around"
                   elif(lat_dir == NORTH and long_dir == WEST and go_lat == NORTH and go_long == EAST) or (lat_dir == SOUTH and long_dir == WEST and go_lat == NORTH and go_long == WEST) or (lat_dir == SOUTH and long_dir == EAST and go_lat == SOUTH and go_long == WEST) or (lat_dir == NORTH and long_dir == EAST and go_lat == SOUTH and go_long == EAST):
                      state = TURNRIGHT
-                     print "right"
+                     #print "right"
                      cur_lat = lat_dir
                      cur_long = long_dir
                   else:
                      state = TURNLEFT
-                     print "left"
+                     #print "left"
                      cur_long = long_dir
                      cur_lat = lat_dir
 
@@ -255,7 +259,6 @@ def nav_th():
                   l_angle = 1080
                   if lat_dir != go_lat or long_dir != go_long:
                      state = ORIENT
-                     print "orient"
 
                elif state == TURNLEFT:
                   if turn_init == 0:
@@ -265,8 +268,9 @@ def nav_th():
                      end = time.time() + 5
                   if time.time() > end:
                      end = time.time() + 5
-                     l_angle += 15
-                     print "more left"
+                     if lat_dir != go_lat or long_dir != go_long: 
+                        l_angle += 15
+                        #print "more left"
                   if (cur_lat != lat_dir or cur_long != long_dir) and (lat_dir != go_lat and long_dir != go_long):
                      state = ORIENT
                      turn_init = 0
@@ -279,8 +283,9 @@ def nav_th():
                      end = time.time() + 5
                   if time.time() > end:
                      end = time.time() + 5
-                     r_angle += 15
-                     print "MORE RIGHT"
+                     if lat_dir != go_lat or long_dir != go_long: 
+                        r_angle += 15
+                        #print "MORE RIGHT"
                   if (cur_lat != lat_dir or cur_long != long_dir) and (lat_dir != go_lat and long_dir != go_long):
                      state = ORIENT
                      turn_init = 0
@@ -295,7 +300,7 @@ def nav_th():
                   if time.time() > end:
                      end = time.time() + 5
                      r_angle += 20
-                     print "turn around faster"
+                     #print "turn around faster"
                   if lat_dir == go_lat or long_dir == go_long:
                      state = ORIENT
                      turn_init = 0
@@ -316,8 +321,8 @@ def nav_th():
                   r_angle = 1080
                if l_angle < 1080:
                   l_angle = 1080
-               #servo_l.set_angle(l_angle)
-               #servo_r.set_angle(r_angle)
+               servo_l.set_angle(l_angle)
+               servo_r.set_angle(r_angle)
                      
 
 
@@ -351,14 +356,14 @@ def poll_th():
   #for servo testing
   #remove this part after testing
   #TODO
-  start_new_thread(nav_th, ())
+  #start_new_thread(nav_th, ())
   
   while True:
     try:
       dict['time'] = datetime.datetime.utcnow()
       temp_agl = alt.read_agl()
       if abs(dict['agl'] - last_measure) < 60:
-         dict['agl'] = temp_agl
+         dict['agl'] = round(temp_agl, 2)
       dict['temp'] = alt.read_temperature()
       
       #act on altimeter, in case accel fails in some way
@@ -374,19 +379,19 @@ def poll_th():
       last_measure = temp_agl
       
       (x, y, z) = accel.read_accel()
-      dict['a_x'] = x
-      dict['a_y'] = y
-      dict['a_z'] = z
+      dict['a_x'] = round(x, 5)
+      dict['a_y'] = round(y, 5)
+      dict['a_z'] = round(z, 5)
   
       (x, y, z) = gyro.read()
-      dict['g_x'] = x
-      dict['g_y'] = y
-      dict['g_z'] = z
+      dict['g_x'] = round(x, 5)
+      dict['g_y'] = round(y, 5)
+      dict['g_z'] = round(z, 5)
 
       (x, y, z) = accel.read_magnetometer()
-      dict['m_x'] = x
-      dict['m_y'] = y
-      dict['m_z'] = z
+      dict['m_x'] = round(x, 5)
+      dict['m_y'] = round(y, 5)
+      dict['m_z'] = round(z, 5)
       dict['new_dat_flag'] = 1
     
       f_log.write(str(dict) + "\n")

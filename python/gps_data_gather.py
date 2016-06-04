@@ -37,7 +37,7 @@ while True:
 				print "could not achieve a fix, stopping"
 				sys.exit() 
 			print "no fix, trying in 1 second"
-			sleep(1)
+			sleep(2)
 			
 		
 	except KeyError:

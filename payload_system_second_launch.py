@@ -452,7 +452,7 @@ def poll_th():
   #for servo testing
   #remove this part after testing
   #TODO
-  start_new_thread(nav_th, ())
+  #start_new_thread(nav_th, ())
   
   while True:
     try:
