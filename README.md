@@ -6,4 +6,4 @@ System is designed to run on a Beaglebone Black Rev C, using a custom cape with 
 
 Records flight data locally at highest possible rate, and transmits at 2 Hz to ground while in flight.
 
-To start: clone repository, then run the setup script, setup.sh
+To get started: clone repository, then run the setup script, setup.sh
